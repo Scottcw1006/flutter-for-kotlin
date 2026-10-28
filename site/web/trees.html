@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>三棵樹與 BuildContext · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 5 章 · Flutter 獨有概念</p>
+      <h1>三棵樹與 BuildContext</h1>
+      <p class="lead">前面一直說「widget 是不可變的設定、每次重建都會產生新的」，那 <code>State</code> 存在哪裡？<code>BuildContext</code> 又是什麼？答案是 Flutter 其實同時維護<strong>三棵樹</strong>。Compose 也有類似的分層，只是藏在編譯器和 runtime 裡；Flutter 則讓你直接碰到它們，所以值得花一頁弄清楚。</p>
+
+      <section class="lesson" id="three-trees">
+        <h2>Widget、Element、RenderObject</h2>
+        <span class="part-label">說明</span>
+        <figure class="diagram">
+          <svg viewBox="0 0 760 330" role="img" aria-label="Widget 樹、Element 樹、RenderObject 樹的對應關係">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" class="dg-arrowhead"/>
+              </marker>
+            </defs>
+            <text class="dg-title" x="130" y="24">Widget 樹</text>
+            <text class="dg-sub" x="130" y="46">不可變的設定，每次 build 都是新的</text>
+            <text class="dg-title" x="380" y="24">Element 樹</text>
+            <text class="dg-sub" x="380" y="46">長期存在，保存 State，就是 context</text>
+            <text class="dg-title" x="630" y="24">RenderObject 樹</text>
+            <text class="dg-sub" x="630" y="46">負責排版與繪製</text>
+
+            <path class="dg-line" d="M36 114 V162 H40 M36 162 V232 H40"/>
+            <rect class="dg-box dg-dart" x="20" y="70" width="220" height="44" rx="10"/>
+            <text class="dg-text" x="130" y="97">Column</text>
+            <rect class="dg-box dg-dart" x="40" y="140" width="200" height="44" rx="10"/>
+            <text class="dg-text" x="140" y="167">Text('Hi')</text>
+            <rect class="dg-box dg-dart" x="40" y="210" width="200" height="44" rx="10"/>
+            <text class="dg-text" x="140" y="237">Counter</text>
+
+            <path class="dg-line" d="M286 114 V162 H290 M286 162 V237 H290"/>
+            <rect class="dg-box dg-dart" x="270" y="70" width="220" height="44" rx="10"/>
+            <text class="dg-text" x="380" y="97">Element（Column）</text>
+            <rect class="dg-box dg-dart" x="290" y="140" width="200" height="44" rx="10"/>
+            <text class="dg-text" x="390" y="167">Element（Text）</text>
+            <rect class="dg-box dg-dart" x="290" y="210" width="200" height="56" rx="10"/>
+            <text class="dg-text" x="390" y="233">StatefulElement</text>
+            <text class="dg-sub" x="390" y="254">持有 Counter 的 State</text>
+
+            <path class="dg-line" d="M536 114 V162 H540"/>
+            <rect class="dg-box dg-dart" x="520" y="70" width="220" height="44" rx="10"/>
+            <text class="dg-text" x="630" y="97">RenderFlex</text>
+            <rect class="dg-box dg-dart" x="540" y="140" width="200" height="44" rx="10"/>
+            <text class="dg-text" x="640" y="167">RenderParagraph</text>
+            <rect class="dg-box dg-os dg-dashed" x="540" y="210" width="200" height="56" rx="10"/>
+            <text class="dg-sub" x="640" y="233">Counter 沒有自己的</text>
+            <text class="dg-sub" x="640" y="252">由它 build 出來的元件負責</text>
+
+            <path class="dg-link" d="M240 92 H266" marker-end="url(#arrow)"/>
+            <path class="dg-link" d="M240 162 H286" marker-end="url(#arrow)"/>
+            <path class="dg-link" d="M240 232 H286" marker-end="url(#arrow)"/>
+            <path class="dg-link" d="M490 92 H516" marker-end="url(#arrow)"/>
+            <path class="dg-link" d="M490 162 H536" marker-end="url(#arrow)"/>
+
+            <text class="dg-sub" x="380" y="304">Widget 每次重建都換新；Element 比對新舊 widget，能沿用就沿用，再把變更交給 RenderObject</text>
+          </svg>
+        </figure>
+        <ul>
+          <li><strong>Widget</strong>：你寫的東西，只是一份描述。建立成本很低，所以每次 <code>build()</code> 都重新產生沒關係。</li>
+          <li><strong>Element</strong>：widget 在樹中的「實體」，長期存在。<code>StatefulWidget</code> 的 <code>State</code> 就掛在它身上；你拿到的 <code>BuildContext</code> 其實就是 Element。</li>
+          <li><strong>RenderObject</strong>：負責排版（第 3 章的 constraints 規則就在這一層運作）和繪製。只有真正會畫東西的 widget 才有。</li>
+        </ul>
+        <p>對應到 Compose：Composable 函式的呼叫相當於 widget；Compose runtime 用 slot table 記住的組合結構（<code>remember</code> 的值就存在那裡）相當於 Element 樹；<code>LayoutNode</code> 則相當於 RenderObject。</p>
+        <p>父層重建時，Element 會拿新的 widget 跟舊的比對：<strong>型別相同、key 也相同</strong>，就沿用原本的 Element 和 State，只更新設定；否則就丟掉舊的、建立新的。下面的 demo 讓你直接看到這件事：</p>
+        <div class="example" data-id="tree-rebuild" data-kotlin="tree-rebuild" data-height="220" data-hint="按幾次「重建父層」：Widget 物件的編號每次都變，State 物件的編號一直不變。"></div>
+      </section>
+
+      <section class="lesson" id="context">
+        <h2>BuildContext 是「在樹中的位置」</h2>
+        <span class="part-label">說明</span>
+        <p><code>Theme.of(context)</code>、<code>Navigator.of(context)</code>、<code>MediaQuery.sizeOf(context)</code> 這些呼叫的意思都是：「<strong>從 context 這個位置往上找</strong>，最近的那個 Theme（或 Navigator）是誰」。所以重點在於你手上的 context 是哪一個位置的。</p>
+        <div class="example" data-id="tree-context" data-kotlin="tree-context" data-height="180" data-hint="兩個色塊都在紫色的 Theme 裡面顯示，但第一個讀到的是外層的綠色。"></div>
+        <ul>
+          <li><code>build(context)</code> 的 context 是<strong>這個 widget 自己</strong>的位置，在它 <code>build()</code> 回傳的 <code>Theme</code> 外面，所以往上找不到這個紫色的 Theme。</li>
+          <li><code>Builder</code> 會在當下的位置建立一個新的 context，從那裡往上找就找得到。另一個做法是把底下的部分抽成獨立的 widget，它自然有自己的 context。</li>
+          <li>Compose 沒有這個問題：<code>LocalAccent.current</code> 寫在 <code>CompositionLocalProvider</code> 的 lambda 裡，執行時就已經在 Provider 裡面了。</li>
+        </ul>
+        <aside class="warn">
+          <p>常見的同類錯誤：在建立 <code>Scaffold</code> 的同一個 <code>build()</code> 裡呼叫 <code>Scaffold.of(context)</code>，或在建立 <code>ProviderScope</code> 的同一層讀 provider，都會找不到。解法也都一樣：用 <code>Builder</code> 或拆出新的 widget。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="inherited">
+        <h2>InheritedWidget 與 CompositionLocal</h2>
+        <span class="part-label">說明</span>
+        <p><code>Theme.of</code>、<code>MediaQuery.of</code> 背後都是 <strong>InheritedWidget</strong>：把一個值提供給整棵子樹，底下任何一層都能用 <code>of(context)</code> 取得，作用跟 <code>CompositionLocal</code> 一樣。</p>
+        <div class="example" data-id="tree-inherited" data-kotlin="tree-inherited" data-height="220" data-hint="拖動滑桿：隔了好幾層的文字也會跟著放大。"></div>
+        <ul>
+          <li><code>dependOnInheritedWidgetOfExactType</code> 除了找值，還會<strong>登記依賴</strong>：值改變時，只有登記過的 widget 會重建，這跟讀取 <code>CompositionLocal</code> 的 composable 會被重組是同一個機制。</li>
+          <li><code>updateShouldNotify</code> 決定「怎樣才算改變」，相當於 <code>compositionLocalOf</code> 的相等性比較。</li>
+          <li>實務上很少直接寫 InheritedWidget：Riverpod 的 <code>ProviderScope</code> 和 <code>Theme</code> 都已經幫你包好了。理解它，是為了看懂 <code>of(context)</code> 在做什麼。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="lifecycle">
+        <h2>State 的生命週期</h2>
+        <span class="part-label">說明</span>
+        <p><code>State</code> 跟著 Element 一起存在，它的生命週期方法對應 Compose 的 effect：</p>
+        <table class="compare">
+          <tr><th>Flutter State</th><th>時機</th><th>Compose</th></tr>
+          <tr><td><code>initState()</code></td><td>第一次加入樹，只會呼叫一次</td><td><code>remember { }</code>、<code>DisposableEffect(Unit)</code> 的開頭</td></tr>
+          <tr><td><code>didChangeDependencies()</code></td><td>依賴的 InheritedWidget 改變時（第一次也會呼叫）</td><td>讀取的 <code>CompositionLocal</code> 改變導致重組</td></tr>
+          <tr><td><code>build()</code></td><td>每次需要重建時</td><td>重組</td></tr>
+          <tr><td><code>didUpdateWidget(old)</code></td><td>父層傳入新的 widget（參數可能變了）</td><td><code>LaunchedEffect(參數)</code> 因 key 改變而重新執行</td></tr>
+          <tr><td><code>dispose()</code></td><td>從樹中移除，之後不會再用</td><td><code>onDispose { }</code></td></tr>
+        </table>
+        <div class="example" data-id="tree-lifecycle" data-kotlin="tree-lifecycle" data-height="360" data-hint="試試看「改變參數」和「移除子元件」，下方會依序列出呼叫到的方法（最新的在最上面）。"></div>
+        <aside class="tip">
+          <p>需要清理的資源（<code>AnimationController</code>、<code>TextEditingController</code>、<code>StreamSubscription</code>）在 <code>initState</code> 或欄位初始值建立，在 <code>dispose</code> 釋放。Compose 的 effect 會自動清理，Flutter 要自己記得。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="method-vs-widget">
+        <h2>為什麼要抽成 Widget，而不是方法</h2>
+        <span class="part-label">說明</span>
+        <p>第 3 章提過，<code>build()</code> 太長時要抽成新的 widget 類別，不要抽成回傳 <code>Widget</code> 的方法。了解三棵樹之後就能說明原因：</p>
+        <div class="example" data-id="tree-widget" data-right="tree-widget.dart" data-right-label="獨立的 Widget 類別（建議）" data-left="tree-method.dart" data-left-label="回傳 Widget 的方法（不建議）" data-demo="none"></div>
+        <ul>
+          <li><strong>沒有自己的 Element</strong>：方法只是把一段 widget 樹貼回父層的 <code>build()</code> 裡。父層任何一點變動，這段都會跟著重建；獨立的 widget 則可以用 <code>const</code> 跳過，或只在自己的資料變動時重建。</li>
+          <li><strong>沒有自己的 context</strong>：方法用的是父層的 context，上一節的 Theme 問題就是這樣發生的。</li>
+          <li><strong>不能有自己的狀態</strong>：方法裡沒辦法放 <code>State</code>。</li>
+        </ul>
+        <p>Compose 沒有這個問題，因為每個 <code>@Composable</code> 函式本身就是一個可以單獨重組的範圍。Flutter 裡對應「一個 composable 函式」的，是一個 widget 類別，不是一個方法。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

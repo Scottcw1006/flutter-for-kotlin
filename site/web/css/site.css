@@ -244,6 +244,10 @@ table.compare th { background: var(--bg-soft); }
 .dg-title { font-size: 17px; font-weight: 700; }
 .dg-text { font-size: 15px; font-weight: 500; }
 .dg-sub { font-size: 12.5px; fill: var(--text-soft); }
+.dg-line { fill: none; stroke: var(--os); stroke-width: 1.5; }
+.dg-link { fill: none; stroke: var(--text-soft); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.dg-arrowhead { fill: var(--text-soft); }
+.dg-dashed { stroke-dasharray: 5 4; }
 .part-label.kotlin::before { background: var(--kotlin); }
 .part-label.dart::before { background: var(--dart); }
 .part-label.cpp::before { background: var(--cpp); }

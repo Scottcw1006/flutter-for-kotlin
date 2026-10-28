@@ -13,11 +13,13 @@ import 'demos/animation_demos.dart';
 import 'demos/dart_async_demos.dart';
 import 'demos/dart_syntax_demos.dart';
 import 'demos/data_demos.dart';
+import 'demos/key_demos.dart';
 import 'demos/layout_demos.dart';
 import 'demos/list_demos.dart';
 import 'demos/nav_demos.dart';
 import 'demos/runner.dart';
 import 'demos/state_demos.dart';
+import 'demos/tree_demos.dart';
 import 'demos/ui_basics_demos.dart';
 
 // 網頁上 data-demo="<id>" 對應到的 Widget
@@ -62,6 +64,12 @@ final Map<String, WidgetBuilder> demos = {
   'nav-tabs': (_) => const TabsDemo(),
   'nav-hero': (_) => const HeroDemo(),
   'todo-router': (_) => const TodoDemo(),
+  'tree-rebuild': (_) => const RebuildDemo(),
+  'tree-context': (_) => const ContextDemo(),
+  'tree-inherited': (_) => const InheritedDemo(),
+  'tree-lifecycle': (_) => const LifecycleDemo(),
+  'keys-swap': (_) => const SwapDemo(),
+  'const-skip': (_) => const ConstDemo(),
 };
 
 /// flutter_bootstrap.js 呼叫 `app.addView({ hostElement, initialData })` 時傳入的資料

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Key 與 const · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 5 章 · Flutter 獨有概念</p>
+      <h1>Key 與 const</h1>
+      <p class="lead">上一頁說過，父層重建時，Element 會拿新的 widget 跟舊的比對：型別相同、key 也相同，就沿用原本的 Element 和 State。這一頁的兩個主題都建立在這條規則上：<strong>Key</strong> 決定「哪個新 widget 對應哪個舊 Element」，<strong>const</strong> 則讓 Flutter 發現「widget 根本沒變」，直接跳過重建。</p>
+
+      <section class="lesson" id="swap">
+        <h2>沒有 Key 時，State 跟著位置走</h2>
+        <span class="part-label">說明</span>
+        <p>第 3 章的列表已經遇過這個問題，這裡用最簡單的例子再看一次：兩個方塊的顏色存在各自的 <code>State</code> 裡，建立時決定一次，A 是紅色、B 是藍色。按「交換」把它們的順序對調：</p>
+        <div class="example" data-id="keys-swap" data-kotlin="keys-swap" data-height="220" data-hint="關掉 Key 時按「交換」：字母換了位置，顏色卻留在原地。打開 Key 再試一次，方塊會整個對調。"></div>
+        <ol>
+          <li>沒有 key 時，Flutter 依<strong>位置</strong>比對：新的第一個是 <code>ColorTile('B')</code>，舊的第一個 Element 也是 <code>ColorTile</code>，型別相同，於是沿用。結果是 Element 和紅色的 State 都留在第一格，只把 <code>widget.label</code> 更新成 B。</li>
+          <li>加上 <code>ValueKey(label)</code> 後，Flutter 依 <strong>key</strong> 比對，發現 B 的 Element 在第二格，就把整個 Element 連同 State 移過來。</li>
+        </ol>
+        <p>Compose 的規則一樣：同一個呼叫位置、沒有 <code>key()</code> 時依順序配對 <code>remember</code> 的值，用 <code>key(label) { }</code> 包起來就會跟著資料走。</p>
+        <aside class="tip">
+          <p>需要 key 的情況其實不多：同一層有<strong>多個同型別、而且有狀態</strong>的子元件，又可能被<strong>新增、刪除或重新排序</strong>時才需要。最常見的就是列表的每一列。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="key-types">
+        <h2>Key 的種類</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Key</th><th>用途</th><th>Compose 對應</th></tr>
+          <tr><td><code>ValueKey(id)</code></td><td>最常用。用資料本身的 id 或值當 key，以 <code>==</code> 比較</td><td><code>items(key = { it.id })</code>、<code>key(id) { }</code></td></tr>
+          <tr><td><code>ObjectKey(obj)</code></td><td>用物件的<strong>身分</strong>（同一個實例）比較，適合沒有 id 的物件</td><td>以物件本身當 key</td></tr>
+          <tr><td><code>UniqueKey()</code></td><td>每次建立都不同。用來<strong>強制</strong>重建、丟掉舊的狀態，例如 <code>AnimatedSwitcher</code> 每次都要播動畫時</td><td>改變 <code>key()</code> 的值</td></tr>
+          <tr><td><code>GlobalKey</code></td><td>整個 App 唯一，可以從外部拿到某個 widget 的 <code>State</code>，或讓 widget 在樹中移動時保留狀態。最常見的用法是 <code>Form</code>：<code>formKey.currentState!.validate()</code></td><td>沒有直接對應；Compose 會把狀態提升出來，或使用 <code>movableContentOf</code></td></tr>
+        </table>
+        <aside class="warn">
+          <p>不要在 <code>build()</code> 裡寫 <code>key: UniqueKey()</code>：每次重建 key 都不同，Flutter 會每次都丟掉舊的 Element 和 State，等於讓這個元件永遠記不住任何東西。<code>GlobalKey</code> 也要存在 <code>State</code> 的欄位裡，不能每次 build 都建立新的。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="const">
+        <h2>const：讓 Flutter 跳過重建</h2>
+        <span class="part-label">說明</span>
+        <p>父層重建時，如果新的子 widget 跟舊的是<strong>同一個物件</strong>，Flutter 就知道設定沒變，直接跳過整個子樹的 <code>build()</code>。<code>const</code> 剛好保證這件事：相同的 const 運算式在整個程式裡只會有一個實例。</p>
+        <div class="example" data-id="const-skip" data-kotlin="const-skip" data-height="220" data-hint="按幾次「重建父層」：const 子元件一直停在 1 次，非 const 的每次都跟著重建。"></div>
+        <p>這裡有一個跟 Compose 很不一樣的地方：</p>
+        <ul>
+          <li><strong>Compose 比較參數是否相等</strong>：<code>RecomposeCounter("參數沒變的子元件")</code> 的參數每次都相等，就算是新的字串物件，也會被跳過。</li>
+          <li><strong>Flutter 比較的是 widget 物件是否為同一個</strong>：非 const 的 <code>BuildCounter(label: '非 const 子元件')</code> 參數完全沒變，但每次 <code>build()</code> 都 new 了一個新物件，所以每次都會重建。Widget 沒有覆寫 <code>==</code>，Flutter 也不會逐一比對欄位。</li>
+        </ul>
+        <p>所以在 Flutter 裡，能寫 <code>const</code> 的地方就寫，效果相當於 Compose 自動幫你做的 skip。實務上的建議：</p>
+        <ul>
+          <li>自己寫的 widget，建構子都宣告成 <code>const</code>（所有欄位都是 <code>final</code> 就可以）。</li>
+          <li>在 <code>analysis_options.yaml</code> 開啟 <code>prefer_const_constructors</code> 規則，IDE 會提示哪裡可以加 <code>const</code>。這條規則預設沒開，這份教學的 demo 就沒有開。</li>
+          <li>不要為了 const 硬改架構：重建一個小 widget 的成本很低。真正有效的優化，是把會變動的部分拆成小 widget，讓重建範圍變小。Flutter DevTools 的 Performance 頁可以看到每個 widget 被重建的次數。</li>
+        </ul>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

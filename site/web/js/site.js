@@ -36,8 +36,8 @@ const CHAPTERS = [
   {
     group: "5 · Flutter 獨有概念",
     items: [
-      { title: "三棵樹與 BuildContext" },
-      { title: "Key 與 const" },
+      { href: "trees.html", title: "三棵樹與 BuildContext" },
+      { href: "keys-const.html", title: "Key 與 const" },
     ],
   },
   {
