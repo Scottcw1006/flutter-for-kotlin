@@ -20,10 +20,11 @@ samples/android/              # Android 原生端範例（Gradle 專案）
 samples/native_bridge/        # 第 6 章：MethodChannel、EventChannel、Pigeon、platform view
 samples/add_to_app/           # 第 6 章：Android 宿主 App（android_host）＋ Flutter 模組（todo_module）
 samples/ios_snippets/         # 第 7 章：Swift 版的原生串接代碼（不是 Xcode 專案，用 typecheck.sh 做型別檢查）
+samples/release/              # 第 8 章：上傳 Google Play 的 GitHub Actions 範例（不會被執行）
 site/web/img/                 # 原生範例在模擬器上的截圖（無法在網頁上執行的 demo）
 ```
 
-網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/` 擷取（支援 `.dart`、`.kt`、`.kts`、`.swift`，以及用 `# [snippet:id]` 標記的 `.yaml`、用 `<!-- [snippet:id] -->` 標記的 `.xml`），代碼與畫面不會不同步。
+網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/` 擷取（支援 `.dart`、`.kt`、`.kts`、`.swift`，以及用 `# [snippet:id]` 標記的 `.yaml`／`.yml`、用 `<!-- [snippet:id] -->` 標記的 `.xml`），代碼與畫面不會不同步。
 
 ## 第 6 章的原生範例
 
@@ -44,6 +45,18 @@ cd ../android_host && ./gradlew :app:installDebug
 flutter precache --ios
 samples/ios_snippets/typecheck.sh
 ```
+
+## 待辦 App 的 flavor
+
+`todo_app` 有 dev 與 prod 兩個 flavor（第 8 章），未指定時使用 dev（`pubspec.yaml` 的 `default-flavor`）。環境設定放在 `todo_app/config/*.json`：
+
+```bash
+cd todo_app
+flutter run --flavor dev --dart-define-from-file=config/dev.json
+flutter build appbundle --flavor prod --dart-define-from-file=config/prod.json
+```
+
+上架用的簽章金鑰放在 `todo_app/android/key.properties`（不進版本控制）；沒有這個檔案時 release 版改用 debug 金鑰簽章。
 
 ## 本機執行
 
@@ -116,4 +129,4 @@ CI 會執行 `python3 tool/subset_cjk_font.py --check`，有字沒被涵蓋時�
 
 ## 部署
 
-push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼與第 6、7 章的原生範例、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。
+push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼、第 6～8 章的原生範例與待辦 App 的 release 版、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。

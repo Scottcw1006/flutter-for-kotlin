@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flavors 與建置設定 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 8 章 · 打包與發佈</p>
+      <h1>Flavors 與建置設定</h1>
+      <p class="lead">Android 開發者熟悉的 build type、product flavor、<code>BuildConfig</code>、release 簽章，在 Flutter 專案裡都還在，因為 <code>android/</code> 就是一個普通的 Gradle 專案。不同的是，Dart 代碼看不到 Gradle 的設定，需要另外的機制把環境資訊傳進去。這一頁替待辦 App 加上 dev 與 prod 兩個環境，並設定好上架用的 release 簽章。</p>
+
+      <section class="lesson" id="concepts">
+        <h2>概念對照</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Android</th><th>Flutter</th></tr>
+          <tr><td>Build type：<code>debug</code>、<code>release</code>，可以自訂更多</td><td><strong>Build mode</strong>：固定只有 debug、profile、release 三種，用 <code>flutter run --release</code> 這類參數切換</td></tr>
+          <tr><td>Product flavor</td><td>還是 Gradle 的 product flavor，用 <code>--flavor dev</code> 選擇</td></tr>
+          <tr><td><code>BuildConfig.DEBUG</code></td><td><code>kDebugMode</code>、<code>kProfileMode</code>、<code>kReleaseMode</code>（<code>package:flutter/foundation.dart</code>）</td></tr>
+          <tr><td><code>buildConfigField</code></td><td><code>--dart-define</code> / <code>--dart-define-from-file</code>，Dart 端用 <code>String.fromEnvironment</code> 讀取</td></tr>
+          <tr><td><code>BuildConfig.FLAVOR</code></td><td><code>appFlavor</code>（<code>package:flutter/services.dart</code>）</td></tr>
+          <tr><td><code>versionName</code> / <code>versionCode</code></td><td><code>pubspec.yaml</code> 的 <code>version: 1.2.0+5</code>，<code>+</code> 前後分別對應兩者</td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="modes">
+        <h2>三種 build mode</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>模式</th><th>Dart 怎麼執行</th><th>用途</th></tr>
+          <tr><td>debug</td><td>JIT，由 Dart VM 邊執行邊編譯</td><td>開發。支援 hot reload、斷點、assert。<strong>效能明顯比較差</strong>，動畫卡頓不代表正式版也會卡</td></tr>
+          <tr><td>profile</td><td>AOT 編譯成機器碼</td><td>量測效能。和 release 幾乎一樣快，但保留了 DevTools 需要的追蹤資訊。只能在實機上執行</td></tr>
+          <tr><td>release</td><td>AOT 編譯成機器碼</td><td>上架。移除所有除錯功能，<code>assert</code> 不會執行</td></tr>
+        </table>
+        <p>這跟 Android 原生很不一樣：Kotlin 的 debug 版和 release 版效能差距不大，Flutter 則差很多。要判斷「這個畫面會不會卡」，一定要用 <code>flutter run --profile</code> 在實機上看。</p>
+      </section>
+
+      <section class="lesson" id="flavors">
+        <h2>Android 的 product flavor</h2>
+        <span class="part-label">說明</span>
+        <p>在 <code>android/app/build.gradle.kts</code> 加上 flavor，寫法和原生專案完全一樣。dev 版的 <code>applicationId</code> 多了 <code>.dev</code> 後綴，所以兩個版本可以同時安裝：</p>
+        <div class="example" data-id="flavors-gradle" data-right="flavors-gradle.kts" data-right-label="android/app/build.gradle.kts" data-right-class="kotlin" data-demo="none"></div>
+        <p>App 名稱改成讀取 flavor 提供的字串資源：<code>AndroidManifest.xml</code> 裡的 <code>android:label="@string/app_name"</code>。</p>
+        <aside class="warn">
+          <p><strong>AGP 9 預設關閉了 <code>resValue</code></strong>。沒有加上 <code>buildFeatures { resValues = true }</code>，建置時會出現「Product Flavor dev contains custom resource values, but the feature is disabled」。</p>
+        </aside>
+        <p>定義了 flavor 之後，執行和建置都要指定要用哪一個：</p>
+        <div class="code-panel"><pre><code>flutter run --flavor dev
+flutter build appbundle --flavor prod</code></pre></div>
+        <p>每次都要打 <code>--flavor</code> 很麻煩，可以在 <code>pubspec.yaml</code> 指定預設值，沒有指定時就使用它：</p>
+        <div class="code-panel"><pre><code>flutter:
+  default-flavor: dev</code></pre></div>
+        <div class="shots">
+          <figure>
+            <img src="img/flavor-launcher.png" alt="Android 模擬器的 App 列表上，同時出現「待辦 Dev」和「待辦清單」兩個 App" loading="lazy">
+            <figcaption>兩個 flavor 同時安裝在模擬器上</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="lesson" id="dart-config">
+        <h2>讓 Dart 知道目前的環境</h2>
+        <span class="part-label">說明</span>
+        <p>Gradle 的 <code>buildConfigField</code> 只有 Kotlin 看得到，Dart 端要用兩種方式取得設定：</p>
+        <ul>
+          <li><strong><code>appFlavor</code></strong>：<code>--flavor</code> 的名稱，Flutter 會自動傳進來。</li>
+          <li><strong><code>--dart-define-from-file</code></strong>：從 JSON 檔讀取任意的鍵值，Dart 端用 <code>bool.fromEnvironment</code>、<code>String.fromEnvironment</code> 讀取。也可以用 <code>--dart-define=KEY=VALUE</code> 一個個傳。</li>
+        </ul>
+        <div class="code-panel"><pre><code>// config/dev.json
+{
+  "ENABLE_LOGGING": true
+}</code></pre></div>
+        <p>待辦 App 用 <code>ENABLE_LOGGING</code> 決定要不要掛上 Riverpod 的 <code>ProviderObserver</code>，在 logcat 印出每次狀態變化：</p>
+        <div class="example" data-id="flavor-config" data-right="flavor-config.dart" data-right-label="todo_app/lib/config.dart" data-demo="none"></div>
+        <p>dev 版另外在左上角加上紅色的「DEV」標記：</p>
+        <div class="example" data-id="flavor-banner" data-right="flavor-banner.dart" data-right-label="todo_app/lib/main.dart" data-demo="none"></div>
+        <div class="shots">
+          <figure>
+            <img src="img/flavor-dev.png" alt="待辦 App 的 dev 版，左上角有紅色的 DEV 標記" loading="lazy">
+            <figcaption>dev 版：左上角有 DEV 標記</figcaption>
+          </figure>
+          <figure>
+            <img src="img/flavor-prod.png" alt="待辦 App 的 prod release 版，沒有任何標記" loading="lazy">
+            <figcaption>prod release 版</figcaption>
+          </figure>
+        </div>
+        <p>用 dev 設定執行，操作一次之後 logcat 會出現類似這樣的記錄：</p>
+        <div class="code-panel"><pre><code>flutter run --flavor dev --dart-define-from-file=config/dev.json
+
+I flutter : [Provider&lt;int&gt;#8bc70] 1</code></pre></div>
+        <aside class="warn">
+          <p><strong>dart-define 的值會寫進 App 裡</strong>，任何人都能從 APK 或 IPA 取出來，所以不能放密碼、API 金鑰這類秘密。另外，值是在編譯時決定的，改了 JSON 檔要重新執行，hot reload 不會套用。實際測試時就踩到這個坑：漏了 <code>--dart-define-from-file</code>，<code>ENABLE_LOGGING</code> 變成預設的 <code>false</code>，log 完全沒有出現。建議把完整的指令寫進 IDE 的 run configuration，不要每次手打。</p>
+        </aside>
+        <p>這些值和 <code>BuildConfig</code> 一樣是編譯時常數。release 版裡 <code>if (AppConfig.enableLogging)</code> 為 <code>false</code> 的分支，會在編譯時直接被移除。</p>
+      </section>
+
+      <section class="lesson" id="ios-flavors">
+        <h2>iOS 的 flavor</h2>
+        <span class="part-label">說明</span>
+        <p>iOS 沒有 product flavor，對應的是 Xcode 的 <strong>scheme</strong> 與 <strong>build configuration</strong>。<code>flutter run --flavor dev</code> 在 iOS 上會尋找名為 <code>dev</code> 的 scheme，所以要在 Xcode 裡手動設定：</p>
+        <ol>
+          <li>在 Project 的 Info 分頁，把 Debug、Release、Profile 三個 build configuration 各複製一份，命名為 <code>Debug-dev</code>、<code>Release-dev</code>、<code>Profile-dev</code>（prod 也一樣）。</li>
+          <li>新增名為 <code>dev</code> 的 scheme，讓它的 Run、Archive 等動作分別使用對應的 <code>-dev</code> configuration。</li>
+          <li>在 Build Settings 裡，依 configuration 設定不同的 Bundle Identifier（例如 <code>com.example.todo.dev</code>）與 App 名稱。</li>
+        </ol>
+        <p>Dart 端完全不用改：<code>appFlavor</code> 和 dart-define 在兩個平台都一樣。這也是建議把環境設定放在 Dart 端的原因，原生端只負責 App ID、名稱、圖示這些非改不可的設定。</p>
+      </section>
+
+      <section class="lesson" id="signing">
+        <h2>Release 簽章</h2>
+        <span class="part-label">說明</span>
+        <p>上架 Google Play 需要一把 <strong>upload key</strong>（下一頁會說明它和 Google 保管的 app signing key 的差別）。先用 JDK 的 <code>keytool</code> 產生：</p>
+        <div class="code-panel"><pre><code>keytool -genkeypair -v -keystore ~/upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload</code></pre></div>
+        <p>密碼與路徑寫在 <code>android/key.properties</code>，這個檔案和 keystore 都<strong>不能</strong>進版本控制（Flutter 範本的 <code>android/.gitignore</code> 已經排除了 <code>key.properties</code>、<code>*.jks</code>、<code>*.keystore</code>）：</p>
+        <div class="code-panel"><pre><code>storeFile=/Users/you/upload-keystore.jks
+storePassword=…
+keyAlias=upload
+keyPassword=…</code></pre></div>
+        <p>Gradle 讀取這個檔案。沒有這個檔案時（例如其他開發者的電腦、一般的 CI），改用 debug 金鑰簽章，這樣大家都還能建置 release 版來測試：</p>
+        <div class="example" data-id="release-keystore" data-left="release-keystore.kts" data-left-label="build.gradle.kts（檔案開頭）" data-right="release-signing.kts" data-right-label="build.gradle.kts（android 區塊內）" data-right-class="kotlin" data-demo="none"></div>
+        <p>用一把測試用的 keystore 建置後，可以用 Android SDK 的 <code>apksigner</code> 確認簽章：</p>
+        <div class="code-panel"><pre><code>apksigner verify --print-certs build/app/outputs/flutter-apk/app-prod-release.apk
+Signer #1 certificate DN: CN=F4K Test Upload</code></pre></div>
+      </section>
+
+      <section class="lesson" id="version">
+        <h2>版本號</h2>
+        <span class="part-label">說明</span>
+        <p><code>pubspec.yaml</code> 的 <code>version: 1.2.0+5</code> 會同時套用到兩個平台：</p>
+        <table class="compare">
+          <tr><th></th><th><code>+</code> 前面：<code>1.2.0</code></th><th><code>+</code> 後面：<code>5</code></th></tr>
+          <tr><td>Android</td><td><code>versionName</code></td><td><code>versionCode</code></td></tr>
+          <tr><td>iOS</td><td><code>CFBundleShortVersionString</code></td><td><code>CFBundleVersion</code></td></tr>
+        </table>
+        <p>建置時也可以用 <code>--build-name=1.2.0 --build-number=42</code> 覆寫。CI 常把 build number 設成 CI 的執行編號，確保每次上傳都比上一次大（兩個商店都會拒絕重複或變小的 build number）。</p>
+      </section>
+
+      <section class="lesson" id="size">
+        <h2>產出格式、大小與混淆</h2>
+        <span class="part-label">說明</span>
+        <p>以下是待辦 App（prod、release）實際建置的結果：</p>
+        <table class="compare">
+          <tr><th>指令</th><th>產出</th><th>大小</th></tr>
+          <tr><td><code>flutter build apk</code></td><td>一個 APK，包含三種 CPU 架構</td><td>57.4 MB</td></tr>
+          <tr><td><code>flutter build apk --split-per-abi</code></td><td>每種架構各一個 APK</td><td>arm64：19.8 MB<br>armeabi-v7a：17.1 MB<br>x86_64：21.3 MB</td></tr>
+          <tr><td><code>flutter build appbundle</code></td><td>AAB，上傳到 Google Play 用</td><td>53 MB（使用者只會下載自己裝置需要的部分）</td></tr>
+        </table>
+        <p>大小主要來自 Flutter 引擎與 AOT 編譯後的 Dart 代碼，每種 CPU 架構各一份；待辦 App 另外還帶了 drift 用的 SQLite 原生函式庫。想知道是哪些套件佔空間，加上 <code>--analyze-size</code>，再用 DevTools 開啟產生的 JSON 檔。</p>
+        <p>混淆分成兩部分：</p>
+        <ul>
+          <li><strong>Kotlin/Java 代碼</strong>：Flutter 預設對 release 版啟用 R8，跟原生專案一樣。用到反射的原生函式庫，可能需要自己加 ProGuard 規則。</li>
+          <li><strong>Dart 代碼</strong>：加上 <code>--obfuscate --split-debug-info=build/symbols</code>。混淆後的 stack trace 要用 <code>flutter symbolize</code> 搭配這些符號檔還原，所以<strong>每一個上架的版本都要保存它的符號檔</strong>，就像保存 R8 的 <code>mapping.txt</code> 一樣。</li>
+        </ul>
+        <div class="code-panel"><pre><code>flutter build appbundle --flavor prod \
+  --dart-define-from-file=config/prod.json \
+  --obfuscate --split-debug-info=build/symbols</code></pre></div>
+        <aside class="tip">
+          <p>建置 AAB 時如果出現「Release app bundle failed to strip debug symbols from native libraries」，通常是 Android SDK 少了 <strong>cmdline-tools</strong>。執行 <code>flutter doctor</code> 檢查，在 Android Studio 的 SDK Manager 安裝即可。</p>
+        </aside>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'config.dart';
 import 'data/drift_todo_repository.dart';
 import 'data/todo_repository.dart';
 import 'router.dart';
@@ -11,6 +12,7 @@ void main() {
   runApp(
     ProviderScope(
       // 在這裡決定 Repository 的實作，相當於 Hilt 的 @Module
+      observers: [if (AppConfig.enableLogging) LoggingObserver()],
       overrides: [
         todoRepositoryProvider.overrideWithValue(DriftTodoRepository(AppDatabase())),
       ],
@@ -38,10 +40,21 @@ class _TodoAppState extends State<TodoApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
+    final app = MaterialApp.router(
       title: '待辦清單',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       routerConfig: _router,
     );
+    // [snippet:flavor-banner]
+    // dev 版在左上角加上標記，一眼就能分辨裝的是哪個版本
+    if (!AppConfig.isDev) return app;
+    return Banner(
+      message: 'DEV',
+      location: BannerLocation.topStart,
+      textDirection: TextDirection.ltr,
+      layoutDirection: TextDirection.ltr,
+      child: app,
+    );
+    // [/snippet]
   }
 }

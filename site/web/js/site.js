@@ -55,8 +55,8 @@ const CHAPTERS = [
   {
     group: "8 · 打包與發佈",
     items: [
-      { title: "Flavors 與建置設定" },
-      { title: "上架 Google Play 與 App Store" },
+      { href: "flavors.html", title: "Flavors 與建置設定" },
+      { href: "publishing.html", title: "上架 Google Play 與 App Store" },
     ],
   },
 ];
@@ -88,7 +88,7 @@ function renderPager() {
     (next ? `<a class="next" href="${next.href}"><small>下一章</small>${next.title}</a>` : "<span></span>");
 }
 
-const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", swift: "swift", xml: "xml" };
+const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", yml: "yaml", swift: "swift", xml: "xml" };
 
 function codePanel(label, labelClass, file) {
   const lang = LANGS[file.split(".").pop()] || "plaintext";

@@ -29,3 +29,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 # [/snippet]
+  # 沒有指定 --flavor 時使用 dev，讓 flutter run 不用每次都加參數
+  default-flavor: dev

@@ -54,6 +54,11 @@ jobs:
           flutter analyze
           flutter build apk --debug
 
+      # 第 8 章：dev/prod flavor 與 release 設定（沒有 key.properties 時用 debug 金鑰簽章）
+      - name: Build todo_app prod release
+        working-directory: todo_app
+        run: flutter build apk --flavor prod --dart-define-from-file=config/prod.json
+
       - name: Build add-to-app host with the Flutter module
         run: |
           cd samples/add_to_app/todo_module

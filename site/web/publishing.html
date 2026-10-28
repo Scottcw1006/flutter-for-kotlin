@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>上架 Google Play 與 App Store · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 8 章 · 打包與發佈</p>
+      <h1>上架 Google Play 與 App Store</h1>
+      <p class="lead">上架 Google Play 的流程，Android 開發者應該都走過；Flutter App 在 Play 這邊跟原生 App 沒有差別。真正的新課題是 App Store。這一頁先把兩個商店的流程並排比較，再分別說明 Flutter 專案要注意的地方，最後用 GitHub Actions 自動上傳。</p>
+
+      <aside class="tip">
+        <p>商店的規定經常調整，本頁提到的費用、測試人數、審核要求，以撰寫當下 Google 與 Apple 的說明為準。實際上架前，請再到 Play Console 和 App Store Connect 確認最新規定。</p>
+      </aside>
+
+      <section class="lesson" id="compare">
+        <h2>兩個商店的流程對照</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th></th><th>Google Play</th><th>App Store</th></tr>
+          <tr><td>開發者帳號</td><td>Google Play Console，一次性註冊費</td><td>Apple Developer Program，年費制，需要每年續約</td></tr>
+          <tr><td>建置指令</td><td><code>flutter build appbundle</code></td><td><code>flutter build ipa</code>（只能在 Mac 上執行）</td></tr>
+          <tr><td>上傳格式</td><td>AAB</td><td>IPA（由 Xcode archive 匯出）</td></tr>
+          <tr><td>簽章</td><td>你用 upload key 簽，Google 再用 app signing key 重新簽</td><td>用 Apple 簽發的 distribution 憑證＋App Store provisioning profile</td></tr>
+          <tr><td>上傳方式</td><td>Play Console 網頁、Play Developer API</td><td>Xcode Organizer、Transporter App、App Store Connect API</td></tr>
+          <tr><td>測試發佈</td><td>內部測試、封閉測試、開放測試軌道</td><td>TestFlight（內部測試員不需審核；外部測試員需要先通過 beta 審核）</td></tr>
+          <tr><td>審核</td><td>新 App 與部分更新會經過審核</td><td><strong>每一個版本</strong>都要人工審核</td></tr>
+          <tr><td>隱私揭露</td><td>Data safety 表單</td><td>App Privacy 標籤，以及 privacy manifest（<code>PrivacyInfo.xcprivacy</code>）</td></tr>
+          <tr><td>平台版本要求</td><td>每年提高 <code>targetSdk</code> 的最低要求</td><td>要求用較新版本的 Xcode 與 iOS SDK 建置</td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="google-play">
+        <h2>Google Play</h2>
+        <span class="part-label">說明</span>
+        <h3>Play App Signing：兩把金鑰</h3>
+        <p>新 App 一律使用 Play App Signing。上一頁產生的是 <strong>upload key</strong>：你用它簽 AAB，證明上傳的人是你；Google 驗證後，改用由 Google 保管的 <strong>app signing key</strong> 重新簽章，再發佈給使用者。</p>
+        <ul>
+          <li>upload key 遺失或外洩時，可以向 Google 申請重設，App 不需要換 package name。這是比過去自己保管唯一金鑰安全的地方。</li>
+          <li>用到 Google 登入、Firebase、Maps 等服務時，要登記的 SHA-1/SHA-256 指紋，是 Play Console「App 完整性」頁面上 <strong>app signing key</strong> 的指紋，不是你本機 upload key 的。這是上架後「Google 登入突然失效」最常見的原因。</li>
+        </ul>
+        <h3>第一次上架的步驟</h3>
+        <ol>
+          <li>在 Play Console 建立 App，填寫 App 名稱、預設語言、免費或付費。</li>
+          <li>完成「App 內容」裡的必填項目：隱私權政策網址、Data safety、內容分級問卷、目標年齡層、廣告聲明。</li>
+          <li><code>flutter build appbundle --flavor prod</code>，第一個版本手動上傳到<strong>內部測試</strong>軌道。之後的版本可以交給 CI 用 API 上傳。</li>
+          <li>測試沒問題後，把同一個版本推進封閉測試或正式版。依 Google 目前的規定，新建立的個人開發者帳號，在申請正式版之前，必須先跑一段時間、達到一定人數的封閉測試。</li>
+        </ol>
+        <p>Flutter 專案在這裡沒有特別之處：<code>targetSdk</code>、<code>minSdk</code> 預設由 Flutter SDK 決定（<code>flutter.targetSdkVersion</code>），升級 Flutter 時通常也會跟著提高；需要時也可以在 <code>build.gradle.kts</code> 直接寫數字。</p>
+      </section>
+
+      <section class="lesson" id="app-store">
+        <h2>App Store</h2>
+        <span class="part-label">說明</span>
+        <h3>上架前的準備</h3>
+        <ol>
+          <li>在 Apple Developer 網站註冊 App ID（Bundle Identifier），開啟需要的功能（推播、Sign in with Apple…）。</li>
+          <li>在 <strong>App Store Connect</strong> 建立 App 紀錄，選擇剛才的 Bundle ID。</li>
+          <li>Xcode 的 Signing &amp; Capabilities 選好 Team，讓 Xcode 自動管理 distribution 憑證與 provisioning profile（第 7 章）。</li>
+        </ol>
+        <h3>建置與上傳</h3>
+        <div class="code-panel"><pre><code>flutter build ipa --flavor prod \
+  --dart-define-from-file=config/prod.json \
+  --obfuscate --split-debug-info=build/symbols</code></pre></div>
+        <p>這個指令會在 <code>build/ios/archive/</code> 產生 Xcode archive，並在 <code>build/ios/ipa/</code> 匯出 IPA。之後有三種上傳方式：用 Xcode 開啟 archive，在 Organizer 按「Distribute App」；把 IPA 拖進 Apple 的 Transporter App；或在 CI 透過 App Store Connect API 上傳。</p>
+        <p>上傳後的版本會先出現在 <strong>TestFlight</strong>。內部測試員（App Store Connect 團隊成員）可以馬上安裝；要給外部測試員，需要先通過 beta 審核。確認沒問題後，在 App Store Connect 把這個 build 選進新版本、填好送審資訊再送出。</p>
+        <h3>常見的退件原因</h3>
+        <table class="compare">
+          <tr><th>問題</th><th>說明</th></tr>
+          <tr><td>缺少權限用途說明</td><td><code>Info.plist</code> 沒寫 <code>NSCameraUsageDescription</code> 這類說明，App 一使用就崩潰，審核一定會被退。說明文字也要具體寫出用途</td></tr>
+          <tr><td>可以註冊帳號，卻不能刪除</td><td>App 提供註冊功能，就必須讓使用者在 App 內刪除帳號。Google Play 也有類似要求</td></tr>
+          <tr><td>功能太少，或只是包一個網頁</td><td>只把網站包成 App、沒有實際功能的 App 可能被拒</td></tr>
+          <tr><td>審核人員無法登入</td><td>需要登入的 App，送審時要提供測試帳號</td></tr>
+          <tr><td>提到其他平台</td><td>截圖或文案出現「Android」、Google Play 的字樣</td></tr>
+        </table>
+        <h3>Privacy manifest 與出口合規</h3>
+        <ul>
+          <li><strong>Privacy manifest</strong>：App 與它使用的 SDK，如果呼叫了 Apple 列為「需要說明原因」的 API（例如讀取檔案時間戳記、<code>UserDefaults</code>），必須在 <code>PrivacyInfo.xcprivacy</code> 宣告原因。Flutter 引擎與常用 plugin 已經附上自己的 privacy manifest，你的 App 只需要宣告自己原生代碼用到的部分。</li>
+          <li><strong>出口合規（加密）</strong>：每次上傳都會被問是否使用加密。只用 HTTPS 等標準加密的 App，在 <code>Info.plist</code> 加上 <code>ITSAppUsesNonExemptEncryption</code> 為 <code>NO</code>，就不會每次都被問。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="ci">
+        <h2>用 GitHub Actions 自動上傳</h2>
+        <span class="part-label">說明</span>
+        <p>下面的 workflow 會在推送 <code>v*</code> tag 時建置待辦 App 的 prod 版，上傳到 Google Play 的內部測試軌道。需要的四個 secret：</p>
+        <table class="compare">
+          <tr><th>Secret</th><th>內容</th></tr>
+          <tr><td><code>UPLOAD_KEYSTORE_BASE64</code></td><td>upload keystore 檔案轉成 base64 的字串</td></tr>
+          <tr><td><code>UPLOAD_KEYSTORE_PASSWORD</code>、<code>UPLOAD_KEY_PASSWORD</code></td><td>keystore 與 key 的密碼</td></tr>
+          <tr><td><code>PLAY_SERVICE_ACCOUNT_JSON</code></td><td>Google Cloud service account 的 JSON 金鑰。這個帳號要在 Play Console 的「使用者和權限」裡，被授予發佈版本的權限</td></tr>
+        </table>
+        <div class="example" data-id="release-workflow" data-right="release-workflow.yml" data-right-label="samples/release/android-release.yml" data-demo="none"></div>
+        <p>重點是 keystore 只存在於 CI 的執行環境：從 secret 還原成檔案、產生 <code>key.properties</code>，上一頁的 Gradle 設定就會自動改用它簽章。這個檔案放在 <code>samples/release/</code>，只作為範例，不會真的執行。</p>
+        <h3>iOS 的 CI</h3>
+        <p>iOS 的建置一定要在 macOS 機器上執行（GitHub Actions 的 <code>macos-latest</code>）。比 Android 麻煩的是簽章：CI 機器上沒有你的鑰匙圈，需要匯入 distribution 憑證（<code>.p12</code>）與 provisioning profile。常見做法有兩種：</p>
+        <ul>
+          <li>把憑證與 profile 存成 secret，在 CI 上建立暫時的鑰匙圈再匯入，上傳時使用 App Store Connect API key。</li>
+          <li>使用 <a href="https://docs.fastlane.tools/">fastlane</a>：<code>match</code> 把憑證加密存在一個私有 repo 裡，讓所有開發者與 CI 共用；<code>pilot</code> 負責上傳到 TestFlight。fastlane 同時支援 Android，也有不少 Flutter 團隊用它統一兩個平台的發佈流程。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="checklist">
+        <h2>上架前檢查清單</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>項目</th><th>確認</th></tr>
+          <tr><td>建置</td><td>用 prod flavor、release mode、正確的 dart-define 檔案；build number 比上一版大</td></tr>
+          <tr><td>效能</td><td>用 <code>flutter run --profile</code> 在實機上跑過主要畫面</td></tr>
+          <tr><td>符號檔</td><td>保存 <code>--split-debug-info</code> 的輸出與 R8 的 <code>mapping.txt</code>；有用 Crashlytics、Sentry 時上傳給它們</td></tr>
+          <tr><td>簽章</td><td>upload key 與密碼有備份；第三方服務登記的是 app signing key 的指紋</td></tr>
+          <tr><td>權限</td><td>Android manifest 與 iOS <code>Info.plist</code> 只宣告實際用到的權限，iOS 每個權限都有用途說明</td></tr>
+          <tr><td>隱私</td><td>隱私權政策網址、Data safety、App Privacy 標籤和實際行為一致</td></tr>
+          <tr><td>商店素材</td><td>App 圖示、截圖（兩個平台要求的尺寸不同）、簡介文字</td></tr>
+        </table>
+        <p>到這裡，待辦 App 走完了從 Dart 語法、UI、狀態管理、資料儲存，到原生串接與上架的完整流程。回頭複習時，可以從<a href="index.html">首頁的章節列表</a>挑需要的部分重看。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>
