@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>從 Composable 到 Widget · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>從 Composable 到 Widget</h1>
+      <p class="lead">Compose 和 Flutter 都是宣告式 UI，心智模型幾乎一樣：描述「資料長這樣時，畫面長這樣」，資料變了，框架就重新產生畫面。真正要調整的習慣只有兩個：Compose 的 UI 單位是<strong>函式</strong>，Flutter 是<strong>類別</strong>；Compose 用 <code>Modifier</code> 修飾元件，Flutter 則是<strong>用 widget 包 widget</strong>。</p>
+
+      <section class="lesson" id="first-widget">
+        <h2>第一個 Widget</h2>
+        <span class="part-label">說明</span>
+        <p>一個 <code>@Composable</code> 函式對應到一個 <code>StatelessWidget</code> 子類別，函式本體對應到 <code>build()</code> 方法：</p>
+        <ul>
+          <li><strong>參數變成欄位</strong>：Compose 的函式參數在 Flutter 裡是 <code>final</code> 欄位，再由建構子填入。<code>required this.name</code> 是 Dart 的具名參數語法：寫在 <code>{}</code> 裡的參數呼叫時要寫名字，加上 <code>required</code> 才是必填。</li>
+          <li><strong>Widget 是不可變的「設定」</strong>：它不是畫面上的元件本身，而是一份描述。所以欄位全是 <code>final</code>，建構子也盡量宣告成 <code>const</code>。<code>const</code> 的 widget 在編譯期就建好，重建時框架可以直接跳過，作用接近 Compose 對 stable 參數的 skip。</li>
+          <li><strong>主題</strong>：<code>MaterialTheme.typography</code> 對應 <code>Theme.of(context).textTheme</code>。<code>context</code> 是這個 widget 在樹中的位置，第 5 章會詳細說明。</li>
+          <li><strong>Modifier 參數</strong>：Compose 慣例是每個元件都開放 <code>modifier</code> 參數，Flutter 沒有這個慣例。要加外距，就在呼叫端外面包一層 <code>Padding</code>。</li>
+        </ul>
+        <div class="example" data-id="ui-first-widget" data-kotlin="ui-first-widget" data-height="120"></div>
+        <aside class="warn">
+          <p><strong>預設對齊不一樣：</strong>Compose 的 <code>Column</code> 預設靠左（<code>Alignment.Start</code>），Flutter 的 <code>Column</code> 預設<strong>置中</strong>（<code>CrossAxisAlignment.center</code>）。所以 Flutter 版要多寫 <code>crossAxisAlignment: CrossAxisAlignment.start</code>，畫面才會一樣。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="column-row">
+        <h2>Column、Row 與 weight</h2>
+        <span class="part-label">說明</span>
+        <p>名字一樣，概念也一樣，差在參數名稱。Flutter 統一用「主軸」（排列方向）與「交叉軸」（垂直於排列方向）來命名，<code>Row</code> 和 <code>Column</code> 的參數名稱完全相同：</p>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th></tr>
+          <tr><td><code>horizontalArrangement</code>（Row）<br><code>verticalArrangement</code>（Column）</td><td><code>mainAxisAlignment</code></td></tr>
+          <tr><td><code>verticalAlignment</code>（Row）<br><code>horizontalAlignment</code>（Column）</td><td><code>crossAxisAlignment</code></td></tr>
+          <tr><td><code>Arrangement.spacedBy(12.dp)</code></td><td><code>spacing: 12</code></td></tr>
+          <tr><td><code>Modifier.weight(1f)</code></td><td><code>Expanded(flex: 1, child: …)</code></td></tr>
+          <tr><td><code>Modifier.weight(1f, fill = false)</code></td><td><code>Flexible(child: …)</code></td></tr>
+          <tr><td><code>12.dp</code></td><td><code>12</code>（邏輯像素，就是 dp，不用寫單位）</td></tr>
+          <tr><td><code>contentDescription</code></td><td><code>semanticLabel</code></td></tr>
+        </table>
+        <p>注意 <code>weight</code> 從 Modifier 變成了外層 widget：在 Flutter 裡，「我在父層佔多少空間」這件事一樣是靠包一層 <code>Expanded</code> 來表達。</p>
+        <div class="example" data-id="ui-column-row" data-kotlin="ui-column-row" data-height="190" data-hint="第二列的名字很長，因為中間那欄包了 Expanded，名字會自動換行，右邊的電話圖示不會被擠出畫面。"></div>
+        <aside class="tip">
+          <p>Flutter 的 <code>Row</code> 預設<strong>撐滿主軸</strong>（<code>mainAxisSize: MainAxisSize.max</code>），所以不需要 <code>fillMaxWidth()</code>。交叉軸預設置中，剛好就是 <code>Alignment.CenterVertically</code>。</p>
+        </aside>
+        <aside class="warn">
+          <p>把上面的 <code>Expanded</code> 拿掉，長名字會超出 Row 的寬度，debug 模式下會出現黃黑相間的斜紋警告（overflow）。Compose 在這種情況下會默默把右邊的元件擠掉，Flutter 則會直接顯示出來。這是 Flutter 版面配置規則（constraints）的結果，下一節會說明。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="modifier">
+        <h2>Modifier 去哪了？</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 沒有 <code>Modifier</code>。Compose 裡每一個 modifier，在 Flutter 都是一個<strong>獨立的 widget</strong>，一層一層包在外面。對應規則很簡單：</p>
+        <aside class="tip">
+          <p><strong>Modifier 鏈由左到右 ＝ Widget 由外到內。</strong>兩邊的「順序很重要」完全是同一件事：先 <code>padding</code> 再 <code>background</code>，就是 <code>Padding</code> 包在色塊外面，所以留白在色塊外。</p>
+        </aside>
+        <table class="compare">
+          <tr><th>Compose Modifier</th><th>Flutter Widget</th></tr>
+          <tr><td><code>.padding()</code></td><td><code>Padding</code></td></tr>
+          <tr><td><code>.background()</code></td><td><code>ColoredBox</code>、<code>DecoratedBox</code>、<code>Material</code></td></tr>
+          <tr><td><code>.clip(RoundedCornerShape())</code></td><td><code>ClipRRect</code></td></tr>
+          <tr><td><code>.clickable { }</code></td><td><code>InkWell</code>（有水波紋）、<code>GestureDetector</code>（沒有）</td></tr>
+          <tr><td><code>.size()</code>、<code>.fillMaxWidth()</code></td><td><code>SizedBox</code>、<code>SizedBox(width: double.infinity)</code></td></tr>
+          <tr><td><code>.alpha()</code></td><td><code>Opacity</code></td></tr>
+          <tr><td><code>.border()</code></td><td><code>DecoratedBox(decoration: BoxDecoration(border: …))</code></td></tr>
+        </table>
+        <p>每層都包一個 widget 很快就會縮排很深，所以 Flutter 提供 <code>Container</code> 當捷徑：一次設定 <code>margin</code>、<code>padding</code>、<code>decoration</code>、寬高與對齊，內部其實就是幫你組合好上面那些 widget。</p>
+        <div class="example" data-id="ui-modifier" data-kotlin="ui-modifier" data-height="200" data-hint="點擊上方的綠色按鈕，可以看到水波紋被裁切在圓角內。"></div>
+        <aside class="warn">
+          <p><code>InkWell</code> 的水波紋是畫在<strong>離它最近的祖先 <code>Material</code></strong> 上。如果改用 <code>Container(color: …)</code> 當背景，色塊會蓋住水波紋，點了看起來沒反應。所以要有背景色又要有水波紋時，用 <code>Material(color: …)</code> 當背景，或是改用 <code>Ink</code>。</p>
+        </aside>
+        <p>縮排太深時，做法跟 Compose 把一段 UI 抽成新的 <code>@Composable</code> 函式一樣，在 Flutter 就抽成一個新的 widget 類別。不要抽成回傳 <code>Widget</code> 的方法，第 5 章會解釋原因。</p>
+      </section>
+
+      <section class="lesson" id="state">
+        <h2>狀態：remember 與 StatefulWidget</h2>
+        <span class="part-label">說明</span>
+        <p>Compose 用 <code>remember { mutableIntStateOf(0) }</code> 讓值在重組之間保留下來。Flutter 的做法是把 widget 拆成<strong>兩個類別</strong>：</p>
+        <ul>
+          <li><code>StatefulWidget</code>：跟其他 widget 一樣是不可變的設定，每次父層重建都會產生新的物件。</li>
+          <li><code>State</code>：由框架保存的長壽物件，畫面重建時不會被丟掉。狀態就放在它的欄位裡，作用相當於 <code>remember</code> 在 Compose 內部保存值的位置。</li>
+        </ul>
+        <p>最大的差別在於<strong>怎麼通知框架狀態變了</strong>。Compose 的 <code>MutableState</code> 會自動追蹤「誰讀了這個值」，寫入時自動重組。Flutter 不做追蹤，改值時要包在 <code>setState(() { … })</code> 裡，明確告訴框架「這個 State 要重建」，框架就會重新呼叫 <code>build()</code>。</p>
+        <div class="example" data-id="ui-state" data-kotlin="ui-state" data-height="170" data-hint="試試看：點擊按鈕。"></div>
+        <aside class="warn">
+          <p>直接寫 <code>_count++</code> 而沒有包在 <code>setState</code> 裡，值確實會變，但畫面不會更新。這是從 Compose 轉過來最常犯的錯。</p>
+        </aside>
+        <p>其他要注意的對應：</p>
+        <ul>
+          <li><code>Button</code> 對應 <code>FilledButton</code>。Flutter 的 <code>ElevatedButton</code> 是另一種有陰影的樣式，名字容易搞混。</li>
+          <li><code>onClick</code> 對應 <code>onPressed</code>，按鈕內容的 lambda 對應 <code>child</code>。</li>
+          <li>Compose 的 <code>Row</code> 預設包住內容，Flutter 的 <code>Row</code> 預設撐滿。要讓兩顆按鈕靠在一起置中，就要寫 <code>mainAxisSize: MainAxisSize.min</code>。</li>
+          <li>重建範圍是整個 <code>build()</code>。狀態放得越外層，每次重建的範圍越大，所以會改變的部分要拆成小 widget，原則跟 Compose 縮小重組範圍一樣。</li>
+        </ul>
+        <aside class="tip">
+          <p><code>rememberSaveable</code> 對應 Flutter 的 <code>RestorationMixin</code>，但實務上很少用。畫面層級的狀態通常會交給狀態管理套件，角色就像 <code>ViewModel</code> 加 <code>StateFlow</code>，這部分在第 4 章說明。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="todo-tile">
+        <h2>實作主線：待辦項目元件</h2>
+        <span class="part-label">說明</span>
+        <p>用本章學到的東西，替待辦清單 App 做出每一列的元件。左邊是你可能會在 Compose 寫出的 <code>TodoItem</code>，右邊是 <code>todo_app/lib/widgets/todo_tile.dart</code> 裡的 <code>TodoTile</code>：</p>
+        <ul>
+          <li><code>ListItem</code> 對應 <code>ListTile</code>：<code>leadingContent</code>、<code>headlineContent</code>、<code>trailingContent</code> 分別對應 <code>leading</code>、<code>title</code>、<code>trailing</code>。</li>
+          <li>回呼型別 <code>() -&gt; Unit</code> 對應 <code>VoidCallback</code>，它其實就是 <code>void Function()</code> 的 typedef。</li>
+          <li><code>TextStyle.copy()</code> 對應 <code>copyWith()</code>。<code>textTheme.bodyLarge</code> 在 Dart 裡是可為 null 的型別，所以要寫 <code>?.copyWith</code>。</li>
+          <li>點整列切換完成狀態：Compose 用 <code>Modifier.clickable</code>，<code>ListTile</code> 則直接提供 <code>onTap</code> 參數。</li>
+        </ul>
+        <div class="example" data-id="todo-tile" data-kotlin="todo-tile" data-height="440" data-hint="下方是完整的待辦清單畫面，每一列就是上面的 TodoTile。試試看：新增一項、點擊勾選、刪除。整個畫面的程式碼在 todo_app/lib/todo_list_screen.dart。"></div>
+        <aside class="tip">
+          <p>清單畫面裡用到的 <code>[...list]</code>、集合裡的 <code>for</code> 等 Dart 語法會在第 2 章說明，<code>ValueKey</code> 在第 5 章說明。</p>
+        </aside>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

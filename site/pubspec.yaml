@@ -1,0 +1,22 @@
+name: f4k_site
+description: "給 Kotlin 開發者的 Flutter 教學網站：demo 以 multi-view 掛載到各章節 HTML 頁面。"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.7
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # 實作主線的待辦 App，網頁上的 demo 直接使用它的 Widget
+  todo_app:
+    path: ../todo_app
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

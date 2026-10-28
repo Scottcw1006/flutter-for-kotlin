@@ -1,0 +1,69 @@
+# Flutter for Kotlin 開發者
+
+給會 Kotlin、寫過 Jetpack Compose 的 Android 工程師的 Flutter 教學網站。每一節都包含**說明、Compose 與 Flutter 代碼並排對照、Flutter 實際畫面**；畫面是同一段 Dart 代碼編譯成 WebAssembly 後，以 Flutter Web 的 multi-view embedding 掛載在頁面上直接執行。
+
+## 專案結構
+
+```
+site/                         # 教學網站（Flutter Web 專案）
+├── lib/main.dart             # demo id → Widget 對照表；以 multi-view 掛到頁面上
+├── lib/demos/*.dart          # 各章的 Flutter demo
+├── tool/extract_snippets.dart# 從原始碼擷取代碼片段到 web/snippets/
+└── web/
+    ├── *.html                # 各章節頁面（說明文字寫在這裡）
+    ├── flutter_bootstrap.js  # 啟動 Flutter engine，替每個 [data-demo] 新增 view
+    ├── css/site.css
+    └── js/site.js            # 側欄目錄、範例區塊、代碼片段載入
+todo_app/                     # 實作主線：待辦清單 App（完整 Flutter 專案）
+samples/android/              # Android 原生端範例（Gradle 專案）
+└── compose-reference/        # 網頁上「Compose（Kotlin）」欄位的代碼，CI 會編譯
+```
+
+網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app/lib`、`samples/android` 擷取，代碼與畫面不會不同步。
+
+## 本機執行
+
+需要 Flutter SDK（`brew install --cask flutter`）。
+
+```bash
+cd site
+dart run tool/extract_snippets.dart
+flutter build web --wasm
+python3 -m http.server 8123 -d build/web
+```
+
+開啟 <http://localhost:8123>。
+
+編譯 Compose 對照代碼需要 JDK 21 與 Android SDK（可直接用 Android Studio 內建的 JBR）：
+
+```bash
+cd samples/android
+JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradlew :compose-reference:compileDebugKotlin
+```
+
+## 新增一個小節
+
+1. 在 `site/lib/demos/` 寫 Flutter demo，用標記包起來：
+
+   ```dart
+   // [snippet:my-demo]
+   class MyDemo extends StatelessWidget { ... }
+   // [/snippet]
+   ```
+
+2. 在 `samples/android/compose-reference` 寫對應的 Compose 代碼，用同樣的標記（同一個 id，副檔名不同即可）。
+3. 在 `site/lib/main.dart` 的 `demos` 對照表加上 `'my-demo': (_) => const MyDemo()`。
+4. 在章節 HTML 中加入：
+
+   ```html
+   <div class="example" data-id="my-demo" data-kotlin="my-demo" data-height="260" data-hint="試試看：……"></div>
+   ```
+
+   - `data-kotlin` 省略時只顯示 Flutter 代碼
+   - `data-demo="none"` 時只顯示代碼、不放實際畫面（例如原生端代碼）
+
+5. 新增章節頁面時，在 `site/web/js/site.js` 的 `CHAPTERS` 加上連結。
+
+## 部署
+
+push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。
