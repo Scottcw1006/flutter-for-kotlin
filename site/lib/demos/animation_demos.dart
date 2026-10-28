@@ -101,6 +101,7 @@ class _ExpandDemoState extends State<ExpandDemo> {
               curve: Curves.easeInOut,
               alignment: Alignment.topCenter,
               child: Column(
+                mainAxisSize: MainAxisSize.min, // 預設會撐滿高度，要改成包住內容
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(

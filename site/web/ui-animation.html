@@ -58,6 +58,9 @@
         <span class="part-label">說明</span>
         <p><code>Modifier.animateContentSize()</code> 對應把內容包進 <code>AnimatedSize</code>。內容變多或變少時，外框會平滑地長大或縮小。</p>
         <div class="example" data-id="anim-size" data-kotlin="anim-size" data-height="220" data-hint="點擊卡片展開或收合。"></div>
+        <aside class="warn">
+          <p>注意 <code>Column</code> 的 <code>mainAxisSize: MainAxisSize.min</code>。Flutter 的 <code>Column</code> 預設會<strong>撐滿</strong>父層給的最大高度，Compose 的則是包住內容。少了這一行，卡片不管展開或收合都會一樣高，<code>AnimatedSize</code> 就沒有東西可以動畫了。</p>
+        </aside>
         <p><code>if (_expanded) ...</code> 是 collection if，直接把展開後才有的子元件寫在 <code>children</code> 裡。這種「顯示或不顯示」的情境，在 Compose 會用 <code>AnimatedVisibility</code>，Flutter 則通常用 <code>AnimatedSize</code> 或 <code>AnimatedSwitcher</code> 來處理。</p>
       </section>
 

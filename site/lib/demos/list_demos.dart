@@ -32,7 +32,7 @@ class GridDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const categories = ['All', 'Work', 'Life', 'Study', 'Sports', 'Travel'];
+    const categories = ['全部', '工作', '生活', '學習', '運動', '旅行'];
     return Column(
       children: [
         SizedBox(

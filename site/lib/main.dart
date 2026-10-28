@@ -117,7 +117,11 @@ class DemoHost extends StatelessWidget {
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: PointerDeviceKind.values.toSet(),
       ),
-      theme: ThemeData(colorSchemeSeed: Colors.teal),
+      // 中文字明確交給打包好的子集字型，避開 Flutter Web 自動下載備用字型時的量測誤差
+      theme: ThemeData(
+        colorSchemeSeed: Colors.teal,
+        fontFamilyFallback: const ['NotoSansTCSubset'],
+      ),
       home: builder != null
           ? Scaffold(body: Builder(builder: builder))
           : Center(child: Text('Unknown demo: ${data.demoId}')),

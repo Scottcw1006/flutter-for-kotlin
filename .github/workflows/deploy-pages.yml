@@ -48,6 +48,12 @@ jobs:
           flutter analyze
           flutter test
 
+      - name: Check CJK font subset covers all demo text
+        working-directory: site
+        run: |
+          pip install fonttools
+          python3 tool/subset_cjk_font.py --check
+
       - name: Build site
         working-directory: site
         run: |

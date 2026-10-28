@@ -43,7 +43,7 @@ val palette = listOf(
 
 @Composable
 fun GridDemo() {
-    val categories = listOf("All", "Work", "Life", "Study", "Sports", "Travel")
+    val categories = listOf("全部", "工作", "生活", "學習", "運動", "旅行")
     Column {
         LazyRow(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),

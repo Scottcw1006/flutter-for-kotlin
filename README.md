@@ -67,6 +67,19 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 
 5. 新增章節頁面時，在 `site/web/js/site.js` 的 `CHAPTERS` 加上連結。
 
+## 中文字型子集
+
+Flutter Web 遇到中文字時會在執行期自動下載備用字型，但這條路徑量出來的文字寬度不準（例如 chip 只顯示一個字）。所以網站把 demo 實際用到的中文字從 Noto Sans TC 切成子集（`site/fonts/`，約 95 KB × 2 個字重），再透過 `fontFamilyFallback` 明確指定。
+
+在 demo 代碼裡加了新的中文字之後，要重新產生子集（需要 `pip install fonttools`，原始字型從 [Google Fonts](https://github.com/google/fonts/tree/main/ofl/notosanstc) 下載）：
+
+```bash
+cd site
+python3 tool/subset_cjk_font.py "NotoSansTC[wght].ttf"
+```
+
+CI 會執行 `python3 tool/subset_cjk_font.py --check`，有字沒被涵蓋時建置會失敗。
+
 ## 部署
 
 push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。
