@@ -12,7 +12,11 @@ _flutter.loader.load({
   onEntrypointLoaded: async (engineInitializer) => {
     const engine = await engineInitializer.initializeEngine({ multiViewEnabled: true });
     const app = await engine.runApp();
-    document.querySelectorAll("[data-demo]").forEach((el) => {
+    // 依高度由小到大加入：Flutter 3.47 的 multi-view 中，所有 view 共用的繪圖表面
+    // 會沿用最後加入的 view 的尺寸，比它高的 view 下半部會被裁掉
+    const hosts = [...document.querySelectorAll("[data-demo]")]
+      .sort((a, b) => a.offsetHeight - b.offsetHeight);
+    hosts.forEach((el) => {
       app.addView({ hostElement: el, initialData: { demoId: el.dataset.demo, pageTitle } });
       el.dataset.ready = "true";
     });

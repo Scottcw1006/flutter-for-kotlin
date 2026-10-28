@@ -7,13 +7,13 @@ const CHAPTERS = [
   },
   {
     group: "1 · 架構總覽",
-    items: [{ title: "Flutter 在 Android 上怎麼運作" }],
+    items: [{ href: "architecture.html", title: "Flutter 在 Android 上怎麼運作" }],
   },
   {
     group: "2 · Dart 給 Kotlin 開發者",
     items: [
-      { title: "語法對照" },
-      { title: "非同步：Future 與 Stream" },
+      { href: "dart-syntax.html", title: "語法對照" },
+      { href: "dart-async.html", title: "非同步：Future 與 Stream" },
     ],
   },
   {
@@ -88,10 +88,13 @@ function renderPager() {
     (next ? `<a class="next" href="${next.href}"><small>下一章</small>${next.title}</a>` : "<span></span>");
 }
 
-function codePanel(label, lang, file) {
+const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", swift: "swift" };
+
+function codePanel(label, labelClass, file) {
+  const lang = LANGS[file.split(".").pop()] || "plaintext";
   return `
     <div>
-      <span class="part-label ${lang}">${label}</span>
+      <span class="part-label ${labelClass}">${label}</span>
       <div class="code-panel">
         <div class="panel-head"><span>${file}</span><button class="copy-btn" type="button">複製</button></div>
         <pre><code class="language-${lang}" data-snippet="${file}">載入中…</code></pre>
@@ -99,19 +102,21 @@ function codePanel(label, lang, file) {
     </div>`;
 }
 
-// 把 <div class="example"> 展開成「Compose 代碼 | Flutter 代碼 + 實際呈現」。
-//   data-id      Flutter snippet（<id>.dart）與 demo 的 id
-//   data-kotlin  對照用的 Compose snippet id（<id>.kt），可省略
-//   data-demo    設為 "none" 時只顯示代碼，不放實際畫面（例如原生端代碼）
+// 把 <div class="example"> 展開成「左：Android/Compose 代碼 | 右：Flutter 代碼 + 實際呈現」。
+//   data-id           右欄 snippet（預設 <id>.dart）與 demo 的 id
+//   data-kotlin       左欄對照用的 Compose snippet id（<id>.kt），可省略
+//   data-left         左欄改用指定檔名的 snippet（例如 build-gradle.kts），搭配 data-left-label
+//   data-right        右欄改用指定檔名的 snippet（例如 main-activity.kt），搭配 data-right-label
+//   data-demo         設為 "none" 時只顯示代碼，不放實際畫面（例如原生端代碼）
 // 必須在 flutter_bootstrap.js 之前同步執行，Flutter 才找得到 [data-demo] 節點。
 function renderExamples() {
   document.querySelectorAll(".example[data-id]").forEach((el) => {
-    const id = el.dataset.id;
-    const kotlin = el.dataset.kotlin;
+    const { id, kotlin, hint, demo } = el.dataset;
+    const left = el.dataset.left || (kotlin && `${kotlin}.kt`);
+    const right = el.dataset.right || `${id}.dart`;
     const height = el.dataset.height || "300";
-    const hint = el.dataset.hint ? `<p class="preview-hint">${el.dataset.hint}</p>` : "";
-    if (!kotlin) el.classList.add("single");
-    const preview = el.dataset.demo === "none" ? "" : `
+    if (!left) el.classList.add("single");
+    const preview = demo === "none" ? "" : `
       <div class="preview-panel">
         <div>
           <span class="part-label">實際呈現（Flutter Web）</span>
@@ -122,11 +127,11 @@ function renderExamples() {
             </div>
           </div>
         </div>
-        ${hint}
+        ${hint ? `<p class="preview-hint">${hint}</p>` : ""}
       </div>`;
     el.innerHTML =
-      (kotlin ? codePanel("Compose（Kotlin）", "kotlin", `${kotlin}.kt`) : "") +
-      codePanel("Flutter（Dart）", "dart", `${id}.dart`) +
+      (left ? codePanel(el.dataset.leftLabel || "Compose（Kotlin）", "kotlin", left) : "") +
+      codePanel(el.dataset.rightLabel || "Flutter（Dart）", "dart", right) +
       preview;
   });
 }

@@ -19,7 +19,7 @@ samples/android/              # Android 原生端範例（Gradle 專案）
 └── compose-reference/        # 網頁上「Compose（Kotlin）」欄位的代碼，CI 會編譯
 ```
 
-網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app/lib`、`samples/android` 擷取，代碼與畫面不會不同步。
+網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/android` 擷取（支援 `.dart`、`.kt`、`.kts`，以及用 `# [snippet:id]` 標記的 `.yaml`），代碼與畫面不會不同步。
 
 ## 本機執行
 
@@ -60,7 +60,10 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
    ```
 
    - `data-kotlin` 省略時只顯示 Flutter 代碼
+   - `data-left` / `data-right` 指定其他檔名的 snippet（例如 `build-gradle.kts`、`pubspec.yaml`），搭配 `data-left-label` / `data-right-label` 改欄位標題
    - `data-demo="none"` 時只顯示代碼、不放實際畫面（例如原生端代碼）
+
+   語言範例可以用 `RunnerDemo`（`site/lib/demos/runner.dart`）當實際呈現：它會執行一個 Dart 函式，把 `print()` 的輸出顯示成 console。
 
 5. 新增章節頁面時，在 `site/web/js/site.js` 的 `CHAPTERS` 加上連結。
 

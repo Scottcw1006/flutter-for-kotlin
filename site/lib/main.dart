@@ -4,10 +4,24 @@ import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 import 'package:todo_app/todo_list_screen.dart';
 
+import 'demos/dart_async_demos.dart';
+import 'demos/dart_syntax_demos.dart';
+import 'demos/runner.dart';
 import 'demos/ui_basics_demos.dart';
 
 // 網頁上 data-demo="<id>" 對應到的 Widget
 final Map<String, WidgetBuilder> demos = {
+  'syntax-variables': (_) => const RunnerDemo(run: variables),
+  'syntax-functions': (_) => const RunnerDemo(run: functions),
+  'syntax-null': (_) => const RunnerDemo(run: nullSafety),
+  'syntax-classes': (_) => const RunnerDemo(run: classes),
+  'syntax-sealed': (_) => const RunnerDemo(run: sealedClasses),
+  'syntax-collections': (_) => const RunnerDemo(run: collections),
+  'async-future': (_) => const RunnerDemo(run: futures),
+  'async-errors': (_) => const RunnerDemo(run: errors),
+  'async-stream': (_) => const RunnerDemo(run: streams),
+  'async-ui': (_) => const CountdownDemo(),
+  'async-isolate': (_) => const RunnerDemo(run: heavyWork),
   'ui-first-widget': (_) => const GreetingDemo(),
   'ui-column-row': (_) => const ContactsDemo(),
   'ui-modifier': (_) => const ModifierDemo(),

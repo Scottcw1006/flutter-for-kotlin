@@ -1,6 +1,6 @@
-// 從 demo 原始碼中擷取 `// [snippet:id]` ... `// [/snippet]` 區塊，
-// 輸出成 web/snippets/<id>.dart 或 <id>.kt，讓網頁上顯示的代碼與實際執行、
-// 實際編譯的代碼永遠一致。
+// 從 demo 原始碼中擷取 `// [snippet:id]` ... `// [/snippet]` 區塊
+//（YAML 用 `# [snippet:id]` ... `# [/snippet]`），輸出成 web/snippets/<id>.<副檔名>，
+// 讓網頁上顯示的代碼與實際執行、實際編譯的代碼永遠一致。
 //
 // 在 site/ 目錄下執行：dart run tool/extract_snippets.dart
 import 'dart:io';
@@ -8,14 +8,14 @@ import 'dart:io';
 /// 要掃描的目錄（相對於 site/）
 const sourceDirs = [
   'lib',
-  '../todo_app/lib',
+  '../todo_app',
   '../samples/android',
 ];
 
-const extensions = {'.dart', '.kt'};
+const extensions = {'.dart', '.kt', '.kts', '.yaml'};
 
-final _start = RegExp(r'^\s*// \[snippet:([\w-]+)\]\s*$');
-final _end = RegExp(r'^\s*// \[/snippet\]\s*$');
+final _start = RegExp(r'^\s*(?://|#) \[snippet:([\w-]+)\]\s*$');
+final _end = RegExp(r'^\s*(?://|#) \[/snippet\]\s*$');
 
 void main() {
   final out = Directory('web/snippets');

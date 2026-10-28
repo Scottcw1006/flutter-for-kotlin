@@ -15,6 +15,8 @@
   --toc-w: 200px;
   --kotlin: #a98bff;
   --dart: #40c4ff;
+  --cpp: #f0a050;
+  --os: #9aa5b1;
   --font: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "PingFang TC", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -51,7 +53,7 @@ body {
 
 a { color: var(--accent); }
 
-code { font-family: var(--mono); font-size: 0.9em; }
+code { font-family: var(--mono); font-size: 0.9em; font-variant-ligatures: none; }
 :not(pre) > code {
   background: var(--bg-soft);
   border: 1px solid var(--border);
@@ -228,6 +230,24 @@ table.compare th, table.compare td {
 }
 table.compare th { background: var(--bg-soft); }
 
+/* ---------- Diagram（inline SVG） ---------- */
+.diagram { margin: 20px 0; }
+.diagram svg { width: 100%; height: auto; display: block; }
+.diagram figcaption { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 8px; }
+.dg-box { stroke-width: 1.5; }
+.dg-kotlin { fill: color-mix(in srgb, var(--kotlin) 18%, var(--surface)); stroke: var(--kotlin); }
+.dg-dart { fill: color-mix(in srgb, var(--dart) 18%, var(--surface)); stroke: var(--dart); }
+.dg-cpp { fill: color-mix(in srgb, var(--cpp) 18%, var(--surface)); stroke: var(--cpp); }
+.dg-os { fill: var(--bg-soft); stroke: var(--os); }
+.dg-title, .dg-text, .dg-sub { fill: var(--text); text-anchor: middle; font-family: var(--font); }
+.dg-title { font-size: 17px; font-weight: 700; }
+.dg-text { font-size: 15px; font-weight: 500; }
+.dg-sub { font-size: 12.5px; fill: var(--text-soft); }
+.part-label.kotlin::before { background: var(--kotlin); }
+.part-label.dart::before { background: var(--dart); }
+.part-label.cpp::before { background: var(--cpp); }
+.part-label.os::before { background: var(--os); }
+
 /* ---------- Example: Compose 代碼 | Flutter 代碼，下方實際呈現 ---------- */
 .example {
   display: grid;
@@ -238,8 +258,6 @@ table.compare th { background: var(--bg-soft); }
 }
 .example.single { grid-template-columns: minmax(0, 1fr); }
 .example .part-label { margin-bottom: 6px; }
-.example .part-label.kotlin::before { background: var(--kotlin); }
-.example .part-label.dart::before { background: var(--dart); }
 
 .code-panel {
   background: var(--code-bg);

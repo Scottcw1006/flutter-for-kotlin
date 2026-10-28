@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>非同步：Future 與 Stream · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 2 章 · Dart 給 Kotlin 開發者</p>
+      <h1>非同步：Future 與 Stream</h1>
+      <p class="lead">Kotlin 的 coroutines 是函式庫，要自己決定 scope 和 dispatcher；Dart 的非同步則是語言內建，而且建立在<strong>單執行緒的 event loop</strong> 上。所以 Dart 少了很多概念：沒有 dispatcher、沒有 scope，也沒有 structured concurrency。寫起來比較簡單，但取消和生命週期要自己注意。</p>
+      <table class="compare">
+        <tr><th>Kotlin coroutines</th><th>Dart</th></tr>
+        <tr><td><code>suspend fun f(): T</code></td><td><code>Future&lt;T&gt; f() async</code></td></tr>
+        <tr><td>呼叫 suspend 函式</td><td><code>await f()</code></td></tr>
+        <tr><td><code>async { }</code>、<code>Deferred</code>、<code>awaitAll()</code></td><td><code>Future</code>、<code>Future.wait()</code></td></tr>
+        <tr><td><code>launch { }</code></td><td>呼叫但不 <code>await</code></td></tr>
+        <tr><td><code>Flow</code>、<code>flow { emit() }</code></td><td><code>Stream</code>、<code>async* { yield }</code></td></tr>
+        <tr><td><code>collect { }</code></td><td><code>await for</code>、<code>listen()</code></td></tr>
+        <tr><td><code>Dispatchers.IO</code></td><td>不需要，I/O 本來就不會阻塞</td></tr>
+        <tr><td><code>Dispatchers.Default</code></td><td>另一個 isolate：<code>Isolate.run()</code>、<code>compute()</code></td></tr>
+        <tr><td><code>Job.cancel()</code>、<code>viewModelScope</code></td><td>Future 無法取消；Stream 用 <code>subscription.cancel()</code></td></tr>
+      </table>
+
+      <section class="lesson" id="future">
+        <h2>Future 與 async/await</h2>
+        <span class="part-label">說明</span>
+        <p>標上 <code>async</code> 的函式會回傳 <code>Future</code>，在裡面可以用 <code>await</code> 等待其他 Future，寫起來和 suspend 函式幾乎一樣。最大的差別在於：</p>
+        <ul>
+          <li><strong>呼叫 async 函式的那一刻，它就開始執行了</strong>，不管你有沒有 <code>await</code>。不 await 就等於「發射後不管」，相當於不用寫 <code>launch</code> 的 <code>launch { }</code>。</li>
+          <li>Kotlin 的 <code>coroutineScope</code> 會等所有子 coroutine 結束，Dart 不會。對照兩邊的輸出：Dart 先印出「futures() 結束」，「稍後取得」是在函式結束之後才出現的。</li>
+          <li>並行等待多個 Future 用 <code>Future.wait()</code>，對應 <code>awaitAll()</code>。</li>
+        </ul>
+        <div class="example" data-id="async-future" data-kotlin="async-future" data-height="200"></div>
+        <aside class="tip">
+          <p>忘記 <code>await</code> 是很常見的 bug，而且編譯器預設不會警告。建議在 <code>analysis_options.yaml</code> 開啟 <code>unawaited_futures</code> 規則；真的不想等待時，用 <code>dart:async</code> 的 <code>unawaited(f())</code> 明確標示。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="errors">
+        <h2>錯誤處理與取消</h2>
+        <span class="part-label">說明</span>
+        <p>錯誤處理和同步代碼一樣用 <code>try</code>/<code>catch</code>。只捕捉特定型別時寫 <code>on 型別 catch (e)</code>，對應 Kotlin 的 <code>catch (e: 型別)</code>。</p>
+        <p>取消就完全不同了。<strong>Future 沒有取消機制</strong>：<code>timeout()</code> 只是「不再等待」，原本的工作會繼續跑完。看輸出的最後一行：逾時之後 <code>mayFail</code> 還是印出了「跑完了」。Kotlin 的 <code>withTimeout</code> 則會真的取消它。</p>
+        <div class="example" data-id="async-errors" data-kotlin="async-errors" data-height="200"></div>
+        <aside class="warn">
+          <p>這在 UI 代碼裡很重要。Compose 的 <code>LaunchedEffect</code> 和 <code>viewModelScope</code> 會在離開畫面時自動取消；Flutter 不會，<code>await</code> 回來時這個 widget 可能已經被移除了。所以在 <code>State</code> 裡 await 之後、呼叫 <code>setState</code> 或使用 <code>context</code> 之前，要先檢查 <code>if (!mounted) return;</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="stream">
+        <h2>Stream 與 Flow</h2>
+        <span class="part-label">說明</span>
+        <p><code>Stream</code> 是會陸續送出多個值的非同步序列，對應 <code>Flow</code>。用 <code>async*</code> 函式加上 <code>yield</code> 產生，相當於 <code>flow { emit() }</code>；用 <code>await for</code> 收集，相當於 <code>collect</code>。<code>where</code>、<code>map</code> 等操作和集合的名字一樣。</p>
+        <div class="example" data-id="async-stream" data-kotlin="async-stream" data-height="180"></div>
+        <table class="compare">
+          <tr><th>Kotlin</th><th>Dart</th></tr>
+          <tr><td>cold <code>Flow</code>：每次 collect 都重新執行</td><td>single-subscription <code>Stream</code>：<strong>只能被收聽一次</strong>，要重來就再呼叫一次產生它的函式</td></tr>
+          <tr><td><code>SharedFlow</code>、<code>MutableSharedFlow</code></td><td>broadcast <code>Stream</code>、<code>StreamController.broadcast()</code></td></tr>
+          <tr><td><code>StateFlow</code></td><td>沒有內建對應；UI 狀態通常交給狀態管理套件（第 4 章）</td></tr>
+          <tr><td><code>val job = scope.launch { flow.collect { } }</code></td><td><code>final sub = stream.listen((v) { })</code></td></tr>
+          <tr><td><code>job.cancel()</code></td><td><code>sub.cancel()</code>，記得在 <code>dispose()</code> 裡呼叫</td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="ui">
+        <h2>在畫面上顯示非同步資料</h2>
+        <span class="part-label">說明</span>
+        <p><code>StreamBuilder</code> 對應 <code>collectAsState()</code>，<code>FutureBuilder</code> 對應 <code>produceState</code>。它們的 <code>builder</code> 會拿到一個 <code>AsyncSnapshot</code>，除了最新的 <code>data</code>，還有 <code>connectionState</code>（等待中、進行中、已結束）和 <code>error</code>，比 Compose 的 State 多了「已結束」與「錯誤」的資訊。</p>
+        <div class="example" data-id="async-ui" data-kotlin="async-ui" data-height="170" data-hint="倒數結束後會顯示「發射！」，這是 Stream 結束時的 ConnectionState.done，Compose 版拿不到這個資訊。"></div>
+        <aside class="warn">
+          <p><strong>不要在 <code>build()</code> 裡建立 Stream 或 Future。</strong><code>build()</code> 隨時可能重新執行，每次都會產生新的 Stream，倒數就會一直重來。要像這裡一樣放在 <code>State</code> 的欄位，或在 <code>initState()</code> 建立，這就是 Compose 裡 <code>remember(round) { countdown(5) }</code> 做的事。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="isolate">
+        <h2>執行緒與 isolate</h2>
+        <span class="part-label">說明</span>
+        <p>Dart 的代碼跑在單執行緒的 event loop 上。網路、檔案這類 I/O 由底層非同步處理，<code>await</code> 時 event loop 會去處理別的事，所以<strong>不需要 <code>Dispatchers.IO</code></strong>。</p>
+        <p>但如果是吃 CPU 的運算（解析大型 JSON、影像處理），它會卡住 event loop，畫面就會掉幀。這時要把工作丟到另一個 <strong>isolate</strong>，相當於 <code>withContext(Dispatchers.Default)</code>：</p>
+        <ul>
+          <li><code>Isolate.run(() =&gt; ...)</code> 是 Dart 的標準做法；Flutter 的 <code>compute(函式, 參數)</code> 是它的包裝，在網頁上也能用。</li>
+          <li>isolate 之間<strong>不共享記憶體</strong>，參數和結果會被複製過去。不用擔心 race condition，但大量資料的傳遞有成本。</li>
+        </ul>
+        <div class="example" data-id="async-isolate" data-kotlin="async-isolate" data-height="130"></div>
+        <aside class="tip">
+          <p>網頁不支援 isolate，所以這裡的 <code>compute</code> 其實是在同一條執行緒上執行的。在 Android 和 iOS 上，它會在另一個 isolate 中執行，計算期間 UI 不會卡住。</p>
+        </aside>
+        <p><code>Stopwatch()..start()</code> 裡的 <code>..</code> 是 cascade 運算子：對同一個物件連續呼叫方法，並回傳物件本身，效果類似 Kotlin 的 <code>apply { start() }</code>。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

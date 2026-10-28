@@ -105,6 +105,7 @@
           <li><code>Button</code> 對應 <code>FilledButton</code>。Flutter 的 <code>ElevatedButton</code> 是另一種有陰影的樣式，名字容易搞混。</li>
           <li><code>onClick</code> 對應 <code>onPressed</code>，按鈕內容的 lambda 對應 <code>child</code>。</li>
           <li>Compose 的 <code>Row</code> 預設包住內容，Flutter 的 <code>Row</code> 預設撐滿。要讓兩顆按鈕靠在一起置中，就要寫 <code>mainAxisSize: MainAxisSize.min</code>。</li>
+          <li>反過來，兩邊的 <code>Column</code> 在交叉軸（寬度）都只包住內容。Compose 版寫了 <code>fillMaxWidth()</code> 讓內容在整個寬度置中，Flutter 版就在最外層包一個 <code>SizedBox(width: double.infinity)</code>。</li>
           <li>重建範圍是整個 <code>build()</code>。狀態放得越外層，每次重建的範圍越大，所以會改變的部分要拆成小 widget，原則跟 Compose 縮小重組範圍一樣。</li>
         </ul>
         <aside class="tip">

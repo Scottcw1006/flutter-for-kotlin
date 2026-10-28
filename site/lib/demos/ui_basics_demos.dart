@@ -135,26 +135,29 @@ class _CounterState extends State<Counter> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Text('$_count', style: Theme.of(context).textTheme.displayMedium),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 8,
-            children: [
-              OutlinedButton(
-                onPressed: () => setState(() => _count--),
-                child: const Text('−1'),
-              ),
-              FilledButton(
-                onPressed: () => setState(() => _count++),
-                child: const Text('+1'),
-              ),
-            ],
-          ),
-        ],
+    return SizedBox( // .fillMaxWidth()
+      width: double.infinity,
+      child: Padding( // .padding(16.dp)
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text('$_count', style: Theme.of(context).textTheme.displayMedium),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 8,
+              children: [
+                OutlinedButton(
+                  onPressed: () => setState(() => _count--),
+                  child: const Text('−1'),
+                ),
+                FilledButton(
+                  onPressed: () => setState(() => _count++),
+                  child: const Text('+1'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

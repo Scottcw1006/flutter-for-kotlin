@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dart 語法對照 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 2 章 · Dart 給 Kotlin 開發者</p>
+      <h1>語法對照</h1>
+      <p class="lead">Dart 和 Kotlin 都是靜態型別、有型別推論、內建 null safety 的現代語言，大部分語法可以一對一轉換。真正需要重新適應的是幾個習慣：<strong>型別寫在前面</strong>、<strong>分號要寫</strong>、<strong>沒有 data class</strong>，以及<strong>可見性用底線表示</strong>。</p>
+      <p>這一章的實際呈現是一個小型 console：右邊的 Dart 函式會真的在瀏覽器裡執行，<code>print()</code> 的輸出顯示在畫面上。可以對照左邊的 Kotlin，想想它會印出什麼。</p>
+
+      <section class="lesson" id="variables">
+        <h2>變數與字串</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Kotlin</th><th>Dart</th></tr>
+          <tr><td><code>val name = "Kotlin"</code></td><td><code>final name = 'Kotlin';</code></td></tr>
+          <tr><td><code>var count = 0</code></td><td><code>var count = 0;</code></td></tr>
+          <tr><td><code>val price: Double = 9.5</code></td><td><code>final double price = 9.5;</code></td></tr>
+          <tr><td><code>const val APP_NAME = "Todo"</code></td><td><code>const appName = 'Todo';</code></td></tr>
+          <tr><td><code>Int</code>、<code>Long</code>、<code>Double</code>、<code>Boolean</code></td><td><code>int</code>（64 位元）、<code>double</code>、<code>bool</code>、<code>num</code>（兩者的父型別）</td></tr>
+        </table>
+        <ul>
+          <li>字串模板跟 Kotlin 完全一樣：<code>$name</code>、<code>${運算式}</code>。Dart 慣例用單引號。</li>
+          <li>命名慣例是 lowerCamelCase，常數也一樣，不用全大寫。</li>
+          <li><code>const</code> 比 Kotlin 強：不只是基本型別，物件與集合也能是編譯期常數，例如 <code>const [1, 2]</code>、<code>const Text('Hi')</code>。相同的 const 值在整個程式只會有一份，這也是 Flutter widget 盡量寫 <code>const</code> 的原因。</li>
+        </ul>
+        <div class="example" data-id="syntax-variables" data-kotlin="syntax-variables" data-height="170"></div>
+        <aside class="warn">
+          <p><strong>Dart 的 List 預設可以修改。</strong>Kotlin 的 <code>listOf()</code> 是唯讀的，要修改得明確用 <code>mutableListOf()</code>；Dart 的 <code>[1, 2, 3]</code> 直接就能 <code>add()</code>，<code>final</code> 只代表變數不能重新指定。要唯讀的集合就寫 <code>const [...]</code> 或 <code>List.unmodifiable(...)</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="functions">
+        <h2>函式與具名參數</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li>回傳型別寫在函式名稱前面。單一運算式的函式用 <code>=&gt;</code>，相當於 Kotlin 的 <code>= 運算式</code>。</li>
+          <li><strong>具名參數要宣告在 <code>{}</code> 裡</strong>，而且呼叫時一定要寫名稱。反過來，一般的位置參數<strong>不能</strong>用名稱呼叫。Kotlin 的任何參數都能具名，這是最大的不同。</li>
+          <li>具名參數預設是選填的：要嘛給預設值，要嘛型別可為 null，必填就加 <code>required</code>。Flutter 的 widget 建構子幾乎都是具名參數。</li>
+          <li>選填的位置參數放在 <code>[]</code> 裡，例如 <code>String greet(String name, [String? greeting])</code>，用得比較少。</li>
+          <li>lambda 寫成 <code>(x) =&gt; x * 2</code> 或 <code>(x) { return x * 2; }</code>，<strong>沒有隱含的 <code>it</code></strong>，大括號版本要明確寫 <code>return</code>。</li>
+          <li>擴充函式寫在 <code>extension 名稱 on 型別 { }</code> 區塊裡。</li>
+        </ul>
+        <div class="example" data-id="syntax-functions" data-kotlin="syntax-functions" data-height="215"></div>
+        <aside class="tip">
+          <p>Dart 的 <code>if</code> 是陳述式，不是運算式，所以 <code>val mark = if (excited) "!" else "."</code> 要改寫成三元運算子 <code>excited ? '!' : '.'</code>。需要多分支時，Dart 3 的 <code>switch</code> 運算式可以取代 <code>when</code>，下面的 sealed class 小節會用到。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="null-safety">
+        <h2>Null safety</h2>
+        <span class="part-label">說明</span>
+        <p>觀念完全一樣：型別預設不可為 null，加上 <code>?</code> 才可以。運算子只有兩個換了寫法：</p>
+        <table class="compare">
+          <tr><th>Kotlin</th><th>Dart</th></tr>
+          <tr><td><code>String?</code>、<code>a?.b</code></td><td>一樣</td></tr>
+          <tr><td><code>a ?: b</code></td><td><code>a ?? b</code></td></tr>
+          <tr><td><code>a!!</code></td><td><code>a!</code></td></tr>
+          <tr><td><code>a = a ?: b</code></td><td><code>a ??= b</code></td></tr>
+          <tr><td><code>lateinit var</code></td><td><code>late</code></td></tr>
+          <tr><td><code>val x by lazy { }</code></td><td><code>late final x = 運算式;</code>（第一次讀取時才執行）</td></tr>
+        </table>
+        <div class="example" data-id="syntax-null" data-kotlin="syntax-null" data-height="185"></div>
+        <aside class="warn">
+          <p><strong>Smart cast 的範圍比較小。</strong>Dart 只會自動轉型<strong>區域變數</strong>和<strong>私有的 <code>final</code> 欄位</strong>。像 <code>user.email</code> 這種公開欄位，即使檢查過不是 null，下一行仍然被當成 <code>String?</code>，因為它可能被子類別用 getter 覆寫。慣用做法是先存進區域變數，如上面的 <code>final e = user.email;</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="classes">
+        <h2>類別、data class 與 record</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li>欄位要另外宣告，建構子用 <code>this.x</code> 直接把參數存進欄位。</li>
+          <li><strong>Dart 沒有 data class。</strong><code>==</code>、<code>hashCode</code>、<code>toString</code>、<code>copyWith</code> 都要自己寫。實務上會用 <a href="https://pub.dev/packages/freezed">freezed</a> 這類套件自動產生，原理就像 KSP 產生代碼。第 4 章的待辦 App 會用到。</li>
+          <li>Dart 3 的 <strong>record</strong> 可以取代 <code>Pair</code>、<code>Triple</code>：<code>(int, int)</code> 是匿名的，<code>({int min, int max})</code> 是具名欄位的版本。record 自帶結構相等，也可以直接解構。</li>
+        </ul>
+        <div class="example" data-id="syntax-classes" data-kotlin="syntax-classes" data-height="175"></div>
+        <p>其他常見的對應：</p>
+        <table class="compare">
+          <tr><th>Kotlin</th><th>Dart</th></tr>
+          <tr><td><code>private</code>、<code>internal</code></td><td>名稱以 <code>_</code> 開頭，代表只有<strong>同一個檔案</strong>看得到。沒有其他可見性關鍵字。</td></tr>
+          <tr><td><code>object</code>（單例）</td><td>頂層變數或函式；需要單例類別時用 <code>static final instance</code></td></tr>
+          <tr><td><code>companion object</code></td><td><code>static</code> 成員</td></tr>
+          <tr><td>次要建構子、工廠函式</td><td>具名建構子 <code>Point.origin()</code>、<code>factory</code> 建構子</td></tr>
+          <tr><td><code>interface</code></td><td>每個類別本身都可以被 <code>implements</code>；有預設實作的共用行為用 <code>mixin</code></td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="sealed">
+        <h2>sealed class 與 pattern matching</h2>
+        <span class="part-label">說明</span>
+        <p>用 sealed class 表示「載入中、成功、失敗」這類狀態，在 Kotlin 和 Dart 都是標準做法。Dart 3 的 <code>switch</code> 運算式對應 <code>when</code>，一樣會檢查是否涵蓋所有子類別。</p>
+        <ul>
+          <li>Dart <strong>沒有巢狀類別</strong>，子類別都寫在頂層，而且必須和 sealed class 在<strong>同一個檔案</strong>。</li>
+          <li>不要把子類別取名為 <code>Error</code>，它會蓋掉 Dart 內建的 <code>Error</code> 類別，所以這裡改叫 <code>Failure</code>。</li>
+          <li>Pattern 比 <code>is</code> 檢查更強：<code>Success(:final items)</code> 會同時比對型別並取出欄位；<code>Success(items: [])</code> 直接比對「items 是空 list」。條件判斷可以加在 pattern 後面：<code>Success(:final items) when items.length &gt; 10</code>。</li>
+        </ul>
+        <div class="example" data-id="syntax-sealed" data-kotlin="syntax-sealed" data-height="175"></div>
+      </section>
+
+      <section class="lesson" id="collections">
+        <h2>集合操作</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li>字面值：<code>[]</code> 是 List，<code>{'a': 1}</code> 是 Map，<code>{'a', 'b'}</code> 是 Set。注意空的 <code>{}</code> 是 Map。</li>
+          <li><strong>collection if / for</strong> 可以直接寫在字面值裡，取代 <code>buildList { }</code>。Flutter 的 <code>children: [...]</code> 經常這樣用，例如待辦 App 裡的 <code>for (final todo in _todos) TodoTile(...)</code>。</li>
+          <li><code>...</code> 是 spread，把另一個集合展開進來。</li>
+          <li>方法名稱：<code>filter</code> 改叫 <code>where</code>，<code>all</code> 改叫 <code>every</code>，<code>firstOrNull { }</code> 對應 <code>firstWhereOrNull</code>（在 <code>package:collection</code>）。<code>groupBy</code> 這類進階函式也在 <code>package:collection</code>。</li>
+        </ul>
+        <div class="example" data-id="syntax-collections" data-kotlin="syntax-collections" data-height="275"></div>
+        <aside class="warn">
+          <p><strong><code>where</code>、<code>map</code> 是惰性的。</strong>它們回傳 <code>Iterable</code> 而不是 <code>List</code>，行為像 Kotlin 的 <code>Sequence</code>：不讀取就不執行，而且<strong>每次走訪都會重新執行一次</strong>。要當成 List 用、或會走訪多次時，記得加上 <code>.toList()</code>。</p>
+        </aside>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

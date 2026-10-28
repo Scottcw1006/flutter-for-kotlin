@@ -1,11 +1,12 @@
 name: todo_app
-description: "A new Flutter project."
+description: "教學實作主線：待辦清單 App。"
 publish_to: 'none'
 version: 0.1.0+1
 
 environment:
   sdk: ^3.13.7
 
+# [snippet:arch-pubspec]
 dependencies:
   flutter:
     sdk: flutter
@@ -17,3 +18,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+# [/snippet]
