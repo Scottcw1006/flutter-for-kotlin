@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>列表 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>列表</h1>
+      <p class="lead">Compose 用一套 <code>LazyColumn { items() }</code> DSL 處理所有列表；Flutter 則依用途分成好幾種建構子：<code>ListView</code>、<code>ListView.builder</code>、<code>ListView.separated</code>、<code>GridView.builder</code>。概念完全一樣：只建立畫面上看得到的項目，捲動時再建立新的。</p>
+
+      <section class="lesson" id="builder">
+        <h2>ListView.builder 與 LazyColumn</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th><th>是否 lazy</th></tr>
+          <tr><td><code>Column(Modifier.verticalScroll())</code></td><td><code>ListView(children: [...])</code></td><td>否，一次建立全部</td></tr>
+          <tr><td><code>LazyColumn { items(n) { } }</code></td><td><code>ListView.builder(itemCount, itemBuilder)</code></td><td>是</td></tr>
+          <tr><td>每個 item 後面加 <code>HorizontalDivider()</code></td><td><code>ListView.separated(separatorBuilder: …)</code></td><td>是</td></tr>
+        </table>
+        <p><code>itemBuilder</code> 會在項目即將出現在畫面上時被呼叫，參數是 <code>index</code>，相當於 <code>items(1000) { index -&gt; }</code> 的 lambda。<code>separated</code> 版本只會在項目<strong>之間</strong>加分隔線，最後一項後面不會有。</p>
+        <div class="example" data-id="lists-builder" data-kotlin="lists-builder" data-height="360" data-hint="捲動看看：這裡有 1000 筆資料，但只有畫面上看得到的那幾筆會被建立。"></div>
+        <aside class="warn">
+          <p><code>ListView(children: [...])</code> 看起來比較簡單，但它會一次建立所有子元件，跟 <code>Column</code> 加 <code>verticalScroll</code> 一樣。項目只有幾個時沒關係，資料筆數不固定時就要用 <code>ListView.builder</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="grid">
+        <h2>橫向列表與 Grid</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li><code>LazyRow</code> 對應 <code>ListView(scrollDirection: Axis.horizontal)</code>。</li>
+          <li><code>LazyVerticalGrid(GridCells.Fixed(3))</code> 對應 <code>GridView.builder</code> 搭配 <code>SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3)</code>。<code>GridCells.Adaptive(120.dp)</code> 則對應 <code>SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 120)</code>。</li>
+          <li>Flutter 的 grid 格子預設是正方形（<code>childAspectRatio: 1</code>），Compose 要自己加 <code>aspectRatio(1f)</code>。</li>
+        </ul>
+        <div class="example" data-id="lists-grid" data-kotlin="lists-grid" data-height="400" data-hint="上方的分類可以左右滑動，下方的 grid 可以上下捲動。"></div>
+        <aside class="warn">
+          <p><strong>橫向的 <code>ListView</code> 一定要給高度。</strong>Compose 的 <code>LazyRow</code> 會自動配合項目的高度；Flutter 的 lazy 列表還沒建立所有項目，不知道它們有多高，所以在 <code>Column</code> 裡要包一個 <code>SizedBox(height: 56)</code>，否則就會遇到上一頁提到的無界 constraints 錯誤。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="keys">
+        <h2>Key：讓狀態跟著項目走</h2>
+        <span class="part-label">說明</span>
+        <p>列表中的每一列都有自己的狀態（這裡是勾選框，存在 <code>State</code> 裡，就像 item 內的 <code>remember</code>）。資料變動時，框架要知道「新的第幾列對應到舊的第幾列」，才能把狀態留給正確的項目。</p>
+        <p>沒有 key 時，Flutter 是<strong>依位置</strong>配對的：刪掉第一項後，原本第一列的狀態會留給新的第一列。Compose 的 <code>LazyColumn</code> 沒有給 <code>key</code> 時也是一樣。</p>
+        <div class="example" data-id="lists-keys" data-kotlin="lists-keys" data-height="300" data-hint="先保持「加上 Key」關閉，按「刪除第一項」：蘋果被刪掉了，但勾選卻跑到香蕉身上。打開 Key 再試一次，勾選會跟著蘋果一起消失。"></div>
+        <ul>
+          <li><code>ValueKey(fruit)</code> 對應 <code>items(list, key = { it })</code>。key 必須<strong>穩定且唯一</strong>，通常用資料的 id。</li>
+          <li>不要用 index 當 key（等於沒有 key），也不要每次 build 都產生新的 <code>UniqueKey()</code>（每次重建都會丟掉狀態）。</li>
+          <li><code>late var _checked = widget.initiallyChecked;</code>：在欄位初始值裡讀取 <code>widget</code> 要加 <code>late</code>，因為物件建立時 <code>widget</code> 還沒被設定。</li>
+        </ul>
+        <p>Key 的運作原理在第 5 章「Key 與 const」會用 widget 樹詳細說明。</p>
+      </section>
+
+      <section class="lesson" id="scroll">
+        <h2>捲動控制與其他列表功能</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th></tr>
+          <tr><td><code>rememberLazyListState()</code></td><td><code>ScrollController</code>，在 <code>State</code> 中建立，並在 <code>dispose()</code> 釋放</td></tr>
+          <tr><td><code>state.animateScrollToItem(index)</code></td><td><code>controller.animateTo(offset, …)</code>，以像素為單位；要捲到某一項可用 <code>Scrollable.ensureVisible</code></td></tr>
+          <tr><td><code>state.firstVisibleItemIndex</code></td><td><code>controller.offset</code>，或用 <code>NotificationListener</code> 監聽捲動</td></tr>
+          <tr><td><code>PullToRefreshBox</code></td><td><code>RefreshIndicator</code></td></tr>
+          <tr><td><code>stickyHeader { }</code>、不同型別的 item 混在一起</td><td><code>CustomScrollView</code> 搭配 slivers（<code>SliverAppBar</code>、<code>SliverList</code>、<code>SliverGrid</code>）</td></tr>
+        </table>
+        <p>Sliver 是 Flutter 可捲動區域的底層元件，<code>ListView</code> 和 <code>GridView</code> 都是由它組成的。要做「捲動時會縮小的 AppBar」或在同一個捲動區域裡混合列表和 grid，就要直接使用 <code>CustomScrollView</code>。</p>
+      </section>
+
+      <section class="lesson" id="todo-list">
+        <h2>實作主線：待辦清單改用 ListView.builder</h2>
+        <span class="part-label">說明</span>
+        <p>上一頁的待辦 App 用的是 <code>ListView(children: [for ...])</code>，項目一多就會一次建立全部。現在把 <code>todo_app/lib/todo_list_screen.dart</code> 改成 <code>ListView.builder</code>，並保留以 <code>todo.id</code> 為值的 <code>ValueKey</code>：刪除或重新排序時，勾選動畫和輸入焦點這類狀態才會跟著正確的項目。</p>
+        <div class="example" data-id="todo-list" data-kotlin="todo-list" data-height="440" data-hint="右邊只截取清單的部分，完整的畫面在 todo_app/lib/todo_list_screen.dart。"></div>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

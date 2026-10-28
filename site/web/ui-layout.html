@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>版面配置與 constraints · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>版面配置與 constraints</h1>
+      <p class="lead">Compose 和 Flutter 的版面配置演算法其實是同一套：constraints 由上往下傳、尺寸由下往上報，每個元件只測量一次。差別在於 Compose 用 <code>fillMaxSize()</code>、<code>wrapContentSize()</code> 這些 Modifier 把規則包得很好，平常感覺不到；Flutter 則把規則直接攤在你面前。弄懂它，就能看懂 Flutter 大部分的版面問題和錯誤訊息。</p>
+
+      <section class="lesson" id="constraints">
+        <h2>Constraints 往下、尺寸往上</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 的版面配置只有三條規則：</p>
+        <ol>
+          <li>父層把 <strong>constraints</strong>（最小與最大的寬、高）傳給子元件。</li>
+          <li>子元件在這個範圍內<strong>決定自己的尺寸</strong>，回報給父層。</li>
+          <li>父層<strong>決定子元件的位置</strong>。子元件不知道自己在哪裡，也不能超出 constraints。</li>
+        </ol>
+        <p>最小值等於最大值時稱為<strong>緊</strong>（tight）的 constraints：子元件沒有選擇，只能是這個尺寸。最小值是 0 時稱為<strong>鬆</strong>（loose）的 constraints：子元件可以在 0 到最大值之間自己決定。</p>
+        <p>所以 <code>Container(width: 100)</code> 的 100 只是一個<strong>希望</strong>，最後的尺寸還是由父層的 constraints 決定。切換下面的三個選項，方塊裡會顯示它實際收到的 constraints：</p>
+        <div class="example" data-id="layout-constraints" data-kotlin="layout-constraints" data-height="320" data-hint="「直接放」：外層 Column 設了 stretch、又包在 Expanded 裡，寬高都是緊的，100 被忽略。「Center」：Center 把 constraints 放鬆，100 生效。「SizedBox」：SizedBox 再把 constraints 變成緊的 200 × 60。"></div>
+        <ul>
+          <li><code>LayoutBuilder</code> 對應 <code>BoxWithConstraints</code>，可以拿到父層給的 constraints 再決定要畫什麼。</li>
+          <li>Compose 的 <code>Modifier.size()</code> 一樣會被 constraints 限制住，所以 <code>fillMaxSize().size(100.dp)</code> 裡的 100 也沒有作用，跟「直接放」是同一件事。</li>
+          <li>兩邊最大的差別在預設值：Compose 的 <code>Box</code> 給子元件的永遠是鬆的 constraints；Flutter 有很多元件會給<strong>緊的</strong> constraints，例如畫面最外層、<code>Expanded</code>、<code>SizedBox</code>，以及 <code>Column</code> 設成 <code>stretch</code> 時的寬度。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="flex">
+        <h2>Expanded、Flexible 與無界的 constraints</h2>
+        <span class="part-label">說明</span>
+        <p><code>Expanded</code> 對應 <code>Modifier.weight()</code>，<code>flex</code> 參數就是權重。<code>Flexible</code> 對應 <code>weight(1f, fill = false)</code>：最多分到這麼多空間，但子元件可以比較小。</p>
+        <div class="example" data-id="layout-flex" data-kotlin="layout-flex" data-height="200" data-hint="拖動滑桿改變藍色的 flex。橘色的 Flexible 只佔它文字需要的寬度，剩下的空間分給兩個 Expanded。"></div>
+        <p><code>Row</code>、<code>Column</code> 的運作方式是：先用<strong>無界</strong>（最大值是無限大）的主軸 constraints 測量沒有 <code>Expanded</code> 的子元件，再把剩下的空間分給 <code>Expanded</code>。這解釋了 Flutter 最常見的錯誤：</p>
+        <aside class="warn">
+          <p><strong>在 <code>Column</code> 裡直接放 <code>ListView</code>，會出現「Vertical viewport was given unbounded height」錯誤。</strong><code>ListView</code> 想盡量長高，但 <code>Column</code> 給它的高度上限是無限大，它無法決定自己的尺寸。解法是把 <code>ListView</code> 包在 <code>Expanded</code> 裡，讓它填滿剩下的空間。</p>
+          <p>這跟在 Compose 的 <code>Column(Modifier.verticalScroll())</code> 裡放 <code>LazyColumn</code> 會崩潰是同一個原因，解法也一樣是 <code>Modifier.weight(1f)</code>。</p>
+        </aside>
+        <p>第一節提到的黃黑斜紋 overflow，也是同樣的機制：<code>Row</code> 先用無界寬度測量長文字，文字量出來比可用寬度還寬，就超出了。把它包進 <code>Expanded</code>，它拿到的就是有上限的寬度，文字會自動換行。</p>
+      </section>
+
+      <section class="lesson" id="stack">
+        <h2>Box 與 Stack</h2>
+        <span class="part-label">說明</span>
+        <p>把元件疊在一起：Compose 用 <code>Box</code>，Flutter 用 <code>Stack</code>。子元件的對齊方式則對應如下：</p>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th></tr>
+          <tr><td><code>Box(contentAlignment = …)</code></td><td><code>Stack(alignment: …)</code></td></tr>
+          <tr><td><code>Modifier.align(Alignment.BottomEnd)</code></td><td><code>Align(alignment: Alignment.bottomRight, child: …)</code></td></tr>
+          <tr><td><code>Modifier.align()</code> 加上 <code>offset()</code></td><td><code>Positioned(right: -4, bottom: -4, child: …)</code></td></tr>
+          <tr><td><code>Modifier.matchParentSize()</code></td><td><code>Positioned.fill(child: …)</code></td></tr>
+        </table>
+        <div class="example" data-id="layout-stack" data-kotlin="layout-stack" data-height="200"></div>
+        <aside class="warn">
+          <p>Flutter 的 <code>Stack</code> 預設會<strong>裁切</strong>超出範圍的子元件（<code>clipBehavior: Clip.hardEdge</code>），Compose 的 <code>Box</code> 則不會。這裡的紅色標籤超出頭像外，所以要設成 <code>Clip.none</code>，否則右下角會被切掉。</p>
+        </aside>
+        <p>其他常用的排版元件：</p>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th></tr>
+          <tr><td><code>Spacer(Modifier.weight(1f))</code></td><td><code>Spacer()</code></td></tr>
+          <tr><td><code>Spacer(Modifier.height(8.dp))</code></td><td><code>SizedBox(height: 8)</code></td></tr>
+          <tr><td><code>Column(Modifier.verticalScroll(rememberScrollState()))</code></td><td><code>SingleChildScrollView(child: Column(…))</code></td></tr>
+          <tr><td><code>Modifier.aspectRatio(16f / 9f)</code></td><td><code>AspectRatio(aspectRatio: 16 / 9, child: …)</code></td></tr>
+          <tr><td><code>Modifier.requiredSize()</code>、<code>wrapContentSize()</code></td><td><code>OverflowBox</code>、<code>UnconstrainedBox</code></td></tr>
+          <tr><td><code>Surface</code></td><td><code>Material</code></td></tr>
+          <tr><td><code>Scaffold(topBar, floatingActionButton, bottomBar)</code></td><td><code>Scaffold(appBar, floatingActionButton, bottomNavigationBar)</code></td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="responsive">
+        <h2>依可用寬度切換版面</h2>
+        <span class="part-label">說明</span>
+        <p>要讓元件依照可用空間改變排列方式，Compose 用 <code>BoxWithConstraints</code>，Flutter 用 <code>LayoutBuilder</code>。拖動下面的滑桿改變容器寬度，低於 220 時三張卡片會從橫排變成直排：</p>
+        <div class="example" data-id="layout-responsive" data-kotlin="layout-responsive" data-height="300"></div>
+        <ul>
+          <li><code>LayoutBuilder</code> 看的是<strong>父層給這個元件的空間</strong>，適合做可以放在任何地方的元件。</li>
+          <li>要看<strong>整個畫面</strong>的大小（例如手機和平板用不同的版面），用 <code>MediaQuery.sizeOf(context)</code>，對應 Compose 的 <code>LocalConfiguration</code> 或 window size class。</li>
+        </ul>
+        <aside class="tip">
+          <p>用 <code>MediaQuery.sizeOf(context)</code>，不要用 <code>MediaQuery.of(context).size</code>。後者在任何 MediaQuery 資料變動時都會重建（例如鍵盤彈出、系統字體大小改變），前者只在尺寸改變時才重建。</p>
+        </aside>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

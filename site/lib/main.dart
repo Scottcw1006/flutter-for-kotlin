@@ -1,11 +1,15 @@
 import 'dart:js_interop';
+import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
 import 'package:todo_app/todo_list_screen.dart';
 
+import 'demos/animation_demos.dart';
 import 'demos/dart_async_demos.dart';
 import 'demos/dart_syntax_demos.dart';
+import 'demos/layout_demos.dart';
+import 'demos/list_demos.dart';
 import 'demos/runner.dart';
 import 'demos/ui_basics_demos.dart';
 
@@ -27,6 +31,18 @@ final Map<String, WidgetBuilder> demos = {
   'ui-modifier': (_) => const ModifierDemo(),
   'ui-state': (_) => const Counter(),
   'todo-tile': (_) => const TodoListScreen(),
+  'layout-constraints': (_) => const ConstraintsDemo(),
+  'layout-flex': (_) => const FlexDemo(),
+  'layout-stack': (_) => const StackDemo(),
+  'layout-responsive': (_) => const ResponsiveDemo(),
+  'lists-builder': (_) => const ContactListDemo(),
+  'lists-grid': (_) => const GridDemo(),
+  'lists-keys': (_) => const KeysDemo(),
+  'todo-list': (_) => const TodoListScreen(),
+  'anim-implicit': (_) => const ImplicitDemo(),
+  'anim-switcher': (_) => const SwitcherDemo(),
+  'anim-size': (_) => const ExpandDemo(),
+  'anim-explicit': (_) => const SpinnerDemo(),
 };
 
 /// flutter_bootstrap.js 呼叫 `app.addView({ hostElement, initialData })` 時傳入的資料
@@ -97,6 +113,10 @@ class DemoHost extends StatelessWidget {
     return MaterialApp(
       title: data.pageTitle,
       debugShowCheckedModeBanner: false,
+      // Flutter Web 預設只允許觸控拖曳捲動；讓滑鼠和觸控板也能拖曳列表
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: PointerDeviceKind.values.toSet(),
+      ),
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       home: builder != null
           ? Scaffold(body: Builder(builder: builder))

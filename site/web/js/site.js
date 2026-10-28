@@ -20,9 +20,9 @@ const CHAPTERS = [
     group: "3 · UI 對照",
     items: [
       { href: "ui-basics.html", title: "從 Composable 到 Widget" },
-      { title: "版面配置與 constraints" },
-      { title: "列表" },
-      { title: "動畫" },
+      { href: "ui-layout.html", title: "版面配置與 constraints" },
+      { href: "ui-lists.html", title: "列表" },
+      { href: "ui-animation.html", title: "動畫" },
     ],
   },
   {

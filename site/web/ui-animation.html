@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>動畫 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>動畫</h1>
+      <p class="lead">兩邊的動畫 API 都分成兩層：簡單的「值變了就自動補間」，以及可以完全控制的「動畫控制器」。Compose 用 <code>animate*AsState</code> 和 <code>Animatable</code>；Flutter 用一系列 <code>Animated*</code> widget 和 <code>AnimationController</code>。</p>
+      <table class="compare">
+        <tr><th>Compose</th><th>Flutter</th></tr>
+        <tr><td><code>animateDpAsState</code>、<code>animateColorAsState</code></td><td><code>AnimatedContainer</code>、<code>AnimatedOpacity</code>、<code>AnimatedAlign</code>⋯，通用版是 <code>TweenAnimationBuilder</code></td></tr>
+        <tr><td><code>AnimatedContent</code></td><td><code>AnimatedSwitcher</code></td></tr>
+        <tr><td><code>AnimatedVisibility</code></td><td>沒有直接對應；用 <code>AnimatedSwitcher</code>、<code>AnimatedOpacity</code> 或 <code>AnimatedSize</code> 組合</td></tr>
+        <tr><td><code>Modifier.animateContentSize()</code></td><td><code>AnimatedSize</code></td></tr>
+        <tr><td><code>Animatable</code>、<code>updateTransition</code></td><td><code>AnimationController</code> 加上 <code>Tween</code>、<code>CurvedAnimation</code></td></tr>
+        <tr><td><code>rememberInfiniteTransition</code></td><td><code>AnimationController.repeat()</code></td></tr>
+        <tr><td><code>tween(easing = FastOutSlowInEasing)</code>、<code>spring()</code></td><td><code>duration</code> 加上 <code>Curves.easeInOut</code>、<code>Curves.elasticOut</code></td></tr>
+      </table>
+
+      <section class="lesson" id="implicit">
+        <h2>隱式動畫：AnimatedContainer</h2>
+        <span class="part-label">說明</span>
+        <p>Compose 是把每個要動的<strong>值</strong>包進 <code>animate*AsState</code>；Flutter 則是換成會動的 <strong>widget</strong>：把 <code>Container</code> 換成 <code>AnimatedContainer</code>，它的寬高、顏色、圓角、padding 只要一改變，就會自動補間到新的值。</p>
+        <ul>
+          <li>Flutter 的隱式動畫一定要給 <code>duration</code>，曲線用 <code>curve</code> 指定。Compose 的預設是 spring，Flutter 的預設則是固定時間長度的補間。</li>
+          <li>常用的還有 <code>AnimatedOpacity</code>、<code>AnimatedPadding</code>、<code>AnimatedAlign</code>、<code>AnimatedDefaultTextStyle</code>。沒有現成 widget 的屬性，就用 <code>TweenAnimationBuilder</code> 自己補間。</li>
+        </ul>
+        <div class="example" data-id="anim-implicit" data-kotlin="anim-implicit" data-height="220" data-hint="點擊方塊，尺寸、顏色、圓角會同時變化。"></div>
+      </section>
+
+      <section class="lesson" id="switcher">
+        <h2>內容切換：AnimatedSwitcher</h2>
+        <span class="part-label">說明</span>
+        <p><code>AnimatedSwitcher</code> 對應 <code>AnimatedContent</code>：子元件換成另一個時，舊的淡出、新的淡入。轉場效果用 <code>transitionBuilder</code> 自訂，相當於 <code>transitionSpec</code>。</p>
+        <div class="example" data-id="anim-switcher" data-kotlin="anim-switcher" data-height="200" data-hint="點擊 +1，數字會縮放切換。"></div>
+        <aside class="warn">
+          <p><strong>記得給 key。</strong><code>AnimatedSwitcher</code> 是比較新舊子元件的型別和 key 來判斷「內容換了沒」。前後都是 <code>Text</code>、又沒有 key，它會認為是同一個元件，只更新文字、不播放動畫。Compose 的 <code>AnimatedContent</code> 則是比較 <code>targetState</code>，所以不需要這一步。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="size">
+        <h2>尺寸變化：AnimatedSize</h2>
+        <span class="part-label">說明</span>
+        <p><code>Modifier.animateContentSize()</code> 對應把內容包進 <code>AnimatedSize</code>。內容變多或變少時，外框會平滑地長大或縮小。</p>
+        <div class="example" data-id="anim-size" data-kotlin="anim-size" data-height="220" data-hint="點擊卡片展開或收合。"></div>
+        <p><code>if (_expanded) ...</code> 是 collection if，直接把展開後才有的子元件寫在 <code>children</code> 裡。這種「顯示或不顯示」的情境，在 Compose 會用 <code>AnimatedVisibility</code>，Flutter 則通常用 <code>AnimatedSize</code> 或 <code>AnimatedSwitcher</code> 來處理。</p>
+      </section>
+
+      <section class="lesson" id="explicit">
+        <h2>顯式動畫：AnimationController</h2>
+        <span class="part-label">說明</span>
+        <p>需要暫停、重播、循環或依手勢控制的動畫，就要用 <code>AnimationController</code>，它對應 Compose 的 <code>Animatable</code>。它在 0 到 1 之間依時間變化，由你呼叫 <code>forward()</code>、<code>reverse()</code>、<code>repeat()</code>、<code>stop()</code> 控制。</p>
+        <ul>
+          <li><strong><code>vsync</code></strong>：controller 需要有人在每一幀通知它，這就是 <code>SingleTickerProviderStateMixin</code> 的作用。Compose 的動畫自動使用 frame clock，Flutter 要明確接上。所在的頁面被其他頁面蓋住時，ticker 也會跟著暫停，節省資源。</li>
+          <li><strong>一定要 <code>dispose()</code></strong>：Compose 的 <code>LaunchedEffect</code> 會隨著離開組合自動取消；Flutter 的 controller 不會自動釋放，忘了 <code>dispose()</code> 會造成記憶體洩漏，debug 模式也會報錯。</li>
+          <li><code>RotationTransition</code>、<code>FadeTransition</code>、<code>SlideTransition</code> 這類 <code>*Transition</code> widget 直接接收 controller，每一幀只更新繪製，<strong>不會</strong>重新執行 <code>build()</code>。效果跟 Compose 在 <code>graphicsLayer { }</code> 裡讀取動畫值一樣，都是為了避開不必要的重建。自訂效果可以用 <code>AnimatedBuilder</code>。</li>
+        </ul>
+        <div class="example" data-id="anim-explicit" data-kotlin="anim-explicit" data-height="220" data-hint="按「暫停」會停在目前的角度，「繼續」從原處接著轉。"></div>
+        <aside class="tip">
+          <p>畫面切換時的共享元素動畫（<code>Hero</code>）會在第 4 章的導航介紹。較複雜的設計師動畫，可以用 <a href="https://pub.dev/packages/lottie">lottie</a> 或 <a href="https://pub.dev/packages/rive">rive</a> 套件直接播放。</p>
+        </aside>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

@@ -67,19 +67,22 @@ class _TodoListScreenState extends State<TodoListScreen> {
               ],
             ),
           ),
+          // [snippet:todo-list]
           Expanded(
-            child: ListView(
-              children: [
-                for (final todo in _todos)
-                  TodoTile(
-                    key: ValueKey(todo.id),
-                    todo: todo,
-                    onToggle: () => _toggle(todo),
-                    onDelete: () => _delete(todo),
-                  ),
-              ],
+            child: ListView.builder(
+              itemCount: _todos.length,
+              itemBuilder: (context, index) {
+                final todo = _todos[index];
+                return TodoTile(
+                  key: ValueKey(todo.id),
+                  todo: todo,
+                  onToggle: () => _toggle(todo),
+                  onDelete: () => _delete(todo),
+                );
+              },
             ),
           ),
+          // [/snippet]
         ],
       ),
     );
