@@ -43,9 +43,9 @@ const CHAPTERS = [
   {
     group: "6 · 與 Android 串接",
     items: [
-      { title: "Platform channel 與 Pigeon" },
-      { title: "Add-to-app" },
-      { title: "嵌入原生 View" },
+      { href: "platform-channels.html", title: "Platform channel 與 Pigeon" },
+      { href: "add-to-app.html", title: "Add-to-app" },
+      { href: "platform-views.html", title: "嵌入原生 View" },
     ],
   },
   {
@@ -88,7 +88,7 @@ function renderPager() {
     (next ? `<a class="next" href="${next.href}"><small>下一章</small>${next.title}</a>` : "<span></span>");
 }
 
-const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", swift: "swift" };
+const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", swift: "swift", xml: "xml" };
 
 function codePanel(label, labelClass, file) {
   const lang = LANGS[file.split(".").pop()] || "plaintext";
@@ -130,8 +130,8 @@ function renderExamples() {
         ${hint ? `<p class="preview-hint">${hint}</p>` : ""}
       </div>`;
     el.innerHTML =
-      (left ? codePanel(el.dataset.leftLabel || "Compose（Kotlin）", "kotlin", left) : "") +
-      codePanel(el.dataset.rightLabel || "Flutter（Dart）", "dart", right) +
+      (left ? codePanel(el.dataset.leftLabel || "Compose（Kotlin）", el.dataset.leftClass || "kotlin", left) : "") +
+      codePanel(el.dataset.rightLabel || "Flutter（Dart）", el.dataset.rightClass || "dart", right) +
       preview;
   });
 }

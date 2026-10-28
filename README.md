@@ -17,9 +17,25 @@ site/                         # 教學網站（Flutter Web 專案）
 todo_app/                     # 實作主線：待辦清單 App（Riverpod、drift、go_router）
 samples/android/              # Android 原生端範例（Gradle 專案）
 └── compose-reference/        # 網頁上「Compose（Kotlin）」欄位的代碼，CI 會編譯
+samples/native_bridge/        # 第 6 章：MethodChannel、EventChannel、Pigeon、platform view
+samples/add_to_app/           # 第 6 章：Android 宿主 App（android_host）＋ Flutter 模組（todo_module）
+site/web/img/                 # 原生範例在模擬器上的截圖（無法在網頁上執行的 demo）
 ```
 
-網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/android` 擷取（支援 `.dart`、`.kt`、`.kts`，以及用 `# [snippet:id]` 標記的 `.yaml`），代碼與畫面不會不同步。
+網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/` 擷取（支援 `.dart`、`.kt`、`.kts`，以及用 `# [snippet:id]` 標記的 `.yaml`、用 `<!-- [snippet:id] -->` 標記的 `.xml`），代碼與畫面不會不同步。
+
+## 第 6 章的原生範例
+
+`samples/native_bridge` 與 `samples/add_to_app` 需要 Android 模擬器才能執行，網頁上改用截圖呈現：
+
+```bash
+cd samples/native_bridge && flutter run
+
+cd samples/add_to_app/todo_module && flutter pub get
+cd ../android_host && ./gradlew :app:installDebug
+```
+
+修改 Pigeon 介面（`samples/native_bridge/pigeons/messages.dart`）之後，執行 `dart run pigeon --input pigeons/messages.dart` 重新產生代碼，產生的檔案一併 commit。
 
 ## 本機執行
 
@@ -60,7 +76,7 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
    ```
 
    - `data-kotlin` 省略時只顯示 Flutter 代碼
-   - `data-left` / `data-right` 指定其他檔名的 snippet（例如 `build-gradle.kts`、`pubspec.yaml`），搭配 `data-left-label` / `data-right-label` 改欄位標題
+   - `data-left` / `data-right` 指定其他檔名的 snippet（例如 `build-gradle.kts`、`pubspec.yaml`），搭配 `data-left-label` / `data-right-label` 改欄位標題，`data-left-class` / `data-right-class`（`kotlin`、`dart`）改標題的顏色標記
    - `data-demo="none"` 時只顯示代碼、不放實際畫面（例如原生端代碼）
 
    語言範例可以用 `RunnerDemo`（`site/lib/demos/runner.dart`）當實際呈現：它會執行一個 Dart 函式，把 `print()` 的輸出顯示成 console。
@@ -92,4 +108,4 @@ CI 會執行 `python3 tool/subset_cjk_font.py --check`，有字沒被涵蓋時�
 
 ## 部署
 
-push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。
+push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼與第 6 章的原生範例、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。

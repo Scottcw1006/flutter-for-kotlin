@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add-to-app · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 6 章 · 與 Android 串接</p>
+      <h1>Add-to-app</h1>
+      <p class="lead">前面幾章都是「整個 App 用 Flutter 寫」。但很多團隊手上已經有一個大型的 Android App，不可能一次重寫。<strong>Add-to-app</strong> 就是反過來：把 Flutter 當成一個模組，放進既有的 Android App 裡，先用 Flutter 寫一兩個新畫面，再慢慢擴大範圍。</p>
+
+      <section class="lesson" id="result">
+        <h2>範例：把待辦清單放進原生 App</h2>
+        <span class="part-label">說明</span>
+        <p>範例在 <code>samples/add_to_app/</code>，有兩個專案：</p>
+        <ul>
+          <li><code>android_host/</code>：一個普通的 Compose App，代表「既有的 Android App」。</li>
+          <li><code>todo_module/</code>：Flutter 模組，畫面直接沿用前幾章做好的 <code>todo_app</code>。</li>
+        </ul>
+        <p>原生畫面按下按鈕後開啟 Flutter 的待辦清單；在 Flutter 裡勾選項目，回到原生畫面時，「剩餘待辦」的數字已經同步更新：</p>
+        <div class="shots">
+          <figure>
+            <img src="img/add-to-app-host.png" alt="原生 Compose 畫面，顯示 Flutter 回報的剩餘待辦為 1，以及開啟 Flutter 待辦清單的按鈕" loading="lazy">
+            <figcaption>原生 Compose 畫面</figcaption>
+          </figure>
+          <figure>
+            <img src="img/add-to-app-flutter.png" alt="Flutter 待辦清單畫面，標題顯示剩 1 項" loading="lazy">
+            <figcaption>開啟的 Flutter 畫面</figcaption>
+          </figure>
+        </div>
+        <p>執行方式：先在 <code>todo_module/</code> 執行 <code>flutter pub get</code>，再用 Android Studio 開啟 <code>android_host/</code>，或在命令列建置：</p>
+        <div class="code-panel"><pre><code>cd samples/add_to_app/todo_module
+flutter pub get
+cd ../android_host
+./gradlew :app:installDebug</code></pre></div>
+      </section>
+
+      <section class="lesson" id="module">
+        <h2>Flutter 模組與 Flutter App 的差別</h2>
+        <span class="part-label">說明</span>
+        <p>用 <code>flutter create -t module</code> 建立的是<strong>模組</strong>。它和一般 Flutter App 的 Dart 代碼寫法完全一樣，差別在 Android 專案的部分：</p>
+        <table class="compare">
+          <tr><th></th><th>Flutter App</th><th>Flutter 模組</th></tr>
+          <tr><td>Android 專案</td><td><code>android/</code>，進版本控制，可以自由修改</td><td><code>.android/</code>，由 <code>flutter pub get</code> 自動產生，<strong>不進版本控制</strong>，不要手動修改</td></tr>
+          <tr><td>產出</td><td>可以安裝的 APK / AAB</td><td>一個 Android library，給別的 App 使用</td></tr>
+          <tr><td>原生代碼寫在哪</td><td><code>android/app/src/</code></td><td>宿主 App 裡</td></tr>
+        </table>
+        <figure class="diagram">
+          <svg viewBox="0 0 760 170" role="img" aria-label="宿主的 :app 模組依賴 :flutter 專案，:flutter 專案再依賴 todo_app 套件">
+            <rect class="dg-box dg-kotlin" x="20" y="30" width="210" height="100" rx="10"/>
+            <text class="dg-text" x="125" y="68">:app</text>
+            <text class="dg-sub" x="125" y="92">android_host 的原生代碼</text>
+            <text class="dg-sub" x="125" y="112">Compose 畫面、Application</text>
+
+            <rect class="dg-box dg-dart" x="275" y="30" width="210" height="100" rx="10"/>
+            <text class="dg-text" x="380" y="68">:flutter</text>
+            <text class="dg-sub" x="380" y="92">todo_module/.android 產生</text>
+            <text class="dg-sub" x="380" y="112">Flutter 引擎＋Dart 代碼</text>
+
+            <rect class="dg-box dg-dart" x="530" y="30" width="210" height="100" rx="10"/>
+            <text class="dg-text" x="635" y="68">todo_app 套件</text>
+            <text class="dg-sub" x="635" y="92">pubspec.yaml 的 path 依賴</text>
+            <text class="dg-sub" x="635" y="112">畫面、Riverpod、drift</text>
+
+            <line class="dg-link" x1="230" y1="80" x2="267" y2="80"/>
+            <polygon class="dg-arrowhead" points="275,80 266,75 266,85"/>
+            <line class="dg-link" x1="485" y1="80" x2="522" y2="80"/>
+            <polygon class="dg-arrowhead" points="530,80 521,75 521,85"/>
+            <text class="dg-sub" x="252" y="158">Gradle 依賴</text>
+            <text class="dg-sub" x="507" y="158">Dart 依賴</text>
+          </svg>
+          <figcaption>
+            <span class="part-label kotlin">Kotlin（Gradle 專案）</span>
+            <span class="part-label dart">Dart（Flutter 模組與套件）</span>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="lesson" id="gradle">
+        <h2>把模組接進 Gradle</h2>
+        <span class="part-label">說明</span>
+        <p>有兩種方式可以讓宿主 App 使用 Flutter 模組：</p>
+        <table class="compare">
+          <tr><th>方式</th><th>做法</th><th>適合的情況</th></tr>
+          <tr><td><strong>原始碼引入</strong>（本範例）</td><td>在 <code>settings.gradle.kts</code> 引入模組的 <code>include_flutter.groovy</code>，宿主建置時一起編譯 Dart 代碼</td><td>Android 開發者也會改 Flutter 代碼；可以用 <code>flutter attach</code> 做 hot reload</td></tr>
+          <tr><td><strong>AAR</strong></td><td>在模組執行 <code>flutter build aar</code>，產生 debug/profile/release 三組 AAR，放到 Maven repository 給宿主依賴</td><td>宿主團隊的電腦不想安裝 Flutter SDK；Flutter 模組由另一個團隊發版</td></tr>
+        </table>
+        <p>原始碼引入的設定只有兩處。<code>settings.gradle.kts</code> 套用模組產生的 script，它會建立名為 <code>:flutter</code> 的 Gradle 專案：</p>
+        <div class="example" data-id="a2a-settings" data-left="a2a-settings.kts" data-left-label="settings.gradle.kts" data-right="a2a-gradle-dep.kts" data-right-label="app/build.gradle.kts" data-right-class="kotlin" data-demo="none"></div>
+        <p>另外要在 <code>AndroidManifest.xml</code> 宣告 <code>FlutterActivity</code>，它來自 Flutter 的 embedding 函式庫：</p>
+        <div class="example" data-id="a2a-manifest" data-right="a2a-manifest.xml" data-right-label="AndroidManifest.xml" data-right-class="kotlin" data-demo="none"></div>
+        <aside class="warn">
+          <p><strong>AGP 9 的相容性問題</strong>：本文撰寫時，Flutter Gradle plugin 還沒支援 AGP 9 的新 DSL 和內建 Kotlin。宿主專案的 <code>gradle.properties</code> 要加上 <code>android.newDsl=false</code> 和 <code>android.builtInKotlin=false</code>，並且自己套用 <code>org.jetbrains.kotlin.android</code> plugin，否則建置會失敗。這兩個設定和 <code>flutter create</code> 產生的 App 專案相同。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="engine">
+        <h2>FlutterEngine：先暖機，再顯示</h2>
+        <span class="part-label">說明</span>
+        <p>每個 Flutter 畫面背後都有一個 <code>FlutterEngine</code>，負責執行 Dart 代碼和繪製畫面。建立引擎、載入 Dart 代碼需要一點時間；如果等使用者按下按鈕才開始，畫面會先空白一下。</p>
+        <p>常見做法是在 <code>Application.onCreate</code> 就建立引擎、執行 Dart 的 <code>main()</code>，放進 <code>FlutterEngineCache</code>。之後開啟 Flutter 畫面時，直接拿快取裡已經在跑的引擎：</p>
+        <div class="example" data-id="a2a-engine" data-left="a2a-engine.kt" data-left-label="Android 宿主（Kotlin）" data-right="a2a-module-main.dart" data-right-label="Flutter 模組（Dart）" data-demo="none"></div>
+        <p>兩邊用的是上一頁的 <code>MethodChannel</code>，名稱都是 <code>f4k/host</code>。因為引擎一啟動就執行 <code>main()</code>，<code>HostBridge</code> 會立刻回報剩餘數量，所以原生畫面在使用者打開 Flutter 之前就已經顯示「2」。</p>
+        <p>暖機的代價是記憶體：引擎從 App 啟動起就一直存在。要不要預先建立，取決於 Flutter 畫面有多常被打開。</p>
+        <aside class="tip">
+          <p>Dart 的狀態跟著<strong>引擎</strong>，不是跟著 Activity。關掉 <code>FlutterActivity</code> 再打開，用的是同一個快取引擎，Riverpod 的狀態、捲動位置都還在。這跟 Compose 畫面的狀態隨 Activity 消失很不一樣。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="open">
+        <h2>顯示 Flutter 畫面的三種方式</h2>
+        <span class="part-label">說明</span>
+        <div class="example" data-id="a2a-open" data-right="a2a-open.kt" data-right-label="MainActivity.kt" data-right-class="kotlin" data-demo="none"></div>
+        <table class="compare">
+          <tr><th>方式</th><th>說明</th></tr>
+          <tr><td><code>FlutterActivity</code></td><td>整個畫面都是 Flutter，最簡單。<code>withCachedEngine(id)</code> 使用快取的引擎；<code>withNewEngine()</code> 每次建立新引擎，可以用 <code>initialRoute</code> 指定起始路由</td></tr>
+          <tr><td><code>FlutterFragment</code></td><td>Flutter 只佔畫面的一部分，或放在既有的 Fragment 導航裡。宿主 Activity 要把 <code>onBackPressed</code>、<code>onTrimMemory</code> 等事件轉給 fragment</td></tr>
+          <tr><td><code>FlutterView</code></td><td>最底層，自己管理 <code>FlutterEngine</code> 的 attach/detach 與生命週期。例如在 Compose 裡用 <code>AndroidView { FlutterView(it) }</code> 嵌入一小塊 Flutter UI</td></tr>
+        </table>
+        <p>同一個引擎同一時間只能顯示在一個地方。要同時顯示多個 Flutter 畫面（例如 ViewPager 的每一頁），用 <code>FlutterEngineGroup</code> 建立多個引擎：同一組裡的引擎共用 Dart 程式碼與 GPU context，每多一個引擎只增加少量記憶體。</p>
+      </section>
+
+      <section class="lesson" id="tips">
+        <h2>實務注意事項</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li><strong>Hot reload</strong>：從 Android Studio 執行宿主 App 後，在模組目錄執行 <code>flutter attach</code>，就能對 Flutter 畫面 hot reload。</li>
+          <li><strong>Plugin</strong>：模組用到的 Flutter plugin（例如 drift 的 sqlite）會自動加進宿主，<code>FlutterEngine</code> 建立時也會自動註冊，不需要額外設定。</li>
+          <li><strong>建置類型</strong>：Flutter 只有 debug、profile、release 三種模式。宿主有自訂的 build type（例如 <code>staging</code>）時，要用 <code>matchingFallbacks</code> 對應到其中一種。</li>
+          <li><strong>App 大小</strong>：加入 Flutter 會增加引擎與 Dart 代碼的大小，release 版大約多數 MB，第 8 章會說明怎麼量測。</li>
+          <li><strong>iOS 也能做同樣的事</strong>：Flutter 模組可以同時嵌入 iOS App，第 7 章會簡單說明。</li>
+        </ul>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

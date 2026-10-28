@@ -32,6 +32,36 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :compose-reference:compileDebugKotlin
 
+  # 第 6 章的串接範例：Flutter App（channel、Pigeon、platform view）與 add-to-app 宿主
+  flutter-samples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.8
+          channel: stable
+          cache: true
+
+      - name: Build native_bridge
+        working-directory: samples/native_bridge
+        run: |
+          flutter analyze
+          flutter build apk --debug
+
+      - name: Build add-to-app host with the Flutter module
+        run: |
+          cd samples/add_to_app/todo_module
+          flutter pub get
+          flutter analyze
+          cd ../android_host
+          ./gradlew :app:assembleDebug
+
   site:
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +97,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main'
-    needs: [android-samples, site]
+    needs: [android-samples, flutter-samples, site]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

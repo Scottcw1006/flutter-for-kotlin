@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Platform channel 與 Pigeon · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 6 章 · 與 Android 串接</p>
+      <h1>Platform channel 與 Pigeon</h1>
+      <p class="lead">Flutter 的 Dart 代碼跑在自己的引擎裡，不能直接呼叫 Android SDK。要讀電量、用藍牙、呼叫公司既有的 Kotlin 函式庫，就得透過 <strong>platform channel</strong> 把訊息送到 Kotlin 端執行，再把結果傳回來。這一頁從最基本的 <code>MethodChannel</code> 開始，最後改用 <strong>Pigeon</strong> 產生有型別的介面。</p>
+
+      <aside class="tip">
+        <p>動手寫 channel 之前，先到 <a href="https://pub.dev">pub.dev</a> 找找看有沒有現成的套件。電量（<code>battery_plus</code>）、裝置資訊（<code>device_info_plus</code>）、相機、定位、通知都已經有人包好了，這些套件內部也是用本頁的機制實作的。自己寫 channel，通常是為了公司內部的 SDK，或是套件沒有提供的功能。</p>
+      </aside>
+
+      <section class="lesson" id="sample">
+        <h2>範例專案</h2>
+        <span class="part-label">說明</span>
+        <p>本章的代碼都來自 repo 裡的 <code>samples/native_bridge/</code>，一個可以直接執行的 Flutter App，CI 會編譯它。四張卡片分別示範 MethodChannel、EventChannel、Pigeon 和下一頁的「嵌入原生 View」：</p>
+        <div class="shots">
+          <figure>
+            <img src="img/native-bridge.png" alt="native_bridge 範例 App 在 Android 模擬器上的畫面：電量 100%、充電中狀態、裝置型號、SHA-256 結果與嵌入的 Compose 按鈕" loading="lazy">
+            <figcaption>Android 模擬器上的執行畫面</figcaption>
+          </figure>
+        </div>
+        <p>開好 Android 模擬器後執行：</p>
+        <div class="code-panel"><pre><code>cd samples/native_bridge
+flutter run</code></pre></div>
+        <p>原生功能無法在瀏覽器裡執行，所以這一章沒有線上 demo，左右兩欄改成「Kotlin 端」與「Dart 端」的對照。</p>
+      </section>
+
+      <section class="lesson" id="how">
+        <h2>訊息是怎麼傳的</h2>
+        <span class="part-label">說明</span>
+        <figure class="diagram">
+          <svg viewBox="0 0 760 230" role="img" aria-label="Dart 透過 BinaryMessenger 把編碼後的訊息送到 Kotlin，再非同步收到回覆">
+            <rect class="dg-box dg-dart" x="20" y="40" width="220" height="110" rx="10"/>
+            <text class="dg-text" x="130" y="82">Dart</text>
+            <text class="dg-sub" x="130" y="106">MethodChannel('f4k/battery')</text>
+            <text class="dg-sub" x="130" y="126">await invokeMethod(…)</text>
+
+            <rect class="dg-box dg-cpp" x="290" y="40" width="180" height="110" rx="10"/>
+            <text class="dg-text" x="380" y="82">BinaryMessenger</text>
+            <text class="dg-sub" x="380" y="106">依 channel 名稱轉送</text>
+            <text class="dg-sub" x="380" y="126">內容是位元組</text>
+
+            <rect class="dg-box dg-kotlin" x="520" y="40" width="220" height="110" rx="10"/>
+            <text class="dg-text" x="630" y="82">Kotlin</text>
+            <text class="dg-sub" x="630" y="106">MethodCallHandler</text>
+            <text class="dg-sub" x="630" y="126">result.success(87)</text>
+
+            <line class="dg-link" x1="240" y1="75" x2="282" y2="75"/>
+            <polygon class="dg-arrowhead" points="290,75 281,70 281,80"/>
+            <line class="dg-link" x1="470" y1="75" x2="512" y2="75"/>
+            <polygon class="dg-arrowhead" points="520,75 511,70 511,80"/>
+            <line class="dg-link" x1="520" y1="135" x2="478" y2="135"/>
+            <polygon class="dg-arrowhead" points="470,135 479,130 479,140"/>
+            <line class="dg-link" x1="290" y1="135" x2="248" y2="135"/>
+            <polygon class="dg-arrowhead" points="240,135 249,130 249,140"/>
+
+            <text class="dg-sub" x="380" y="186">① 方法名稱與參數經過 codec 編碼，送到同名的 channel</text>
+            <text class="dg-sub" x="380" y="210">② Kotlin 在主執行緒處理，回覆同樣編碼後傳回，Dart 端的 Future 完成</text>
+          </svg>
+          <figcaption>
+            <span class="part-label dart">Dart</span>
+            <span class="part-label cpp">Flutter Engine</span>
+            <span class="part-label kotlin">Kotlin</span>
+          </figcaption>
+        </figure>
+        <p>幾個 Kotlin 開發者要先知道的特性：</p>
+        <ul>
+          <li><strong>永遠是非同步的</strong>：Dart 端拿到的是 <code>Future</code>，不能同步呼叫 Kotlin。</li>
+          <li><strong>用字串配對</strong>：channel 名稱和方法名稱都是字串，兩邊寫的不一樣也能編譯，執行時才會出錯。</li>
+          <li><strong>只能傳特定型別</strong>：參數和回傳值會被序列化，不能傳任意物件。</li>
+          <li><strong>Kotlin 端在主執行緒執行</strong>：耗時的工作要自己切到背景，就像在 Activity 裡一樣。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="method-channel">
+        <h2>MethodChannel：一問一答</h2>
+        <span class="part-label">說明</span>
+        <p>最常用的是 <code>MethodChannel</code>，相當於一個非同步的遠端呼叫：Dart 端呼叫方法名稱，Kotlin 端用 <code>when</code> 分派，再呼叫 <code>result</code> 的其中一個方法回覆。</p>
+        <div class="example" data-id="channel-method" data-left="channel-method.kt" data-left-label="Android 端（Kotlin）" data-right-label="Flutter 端（Dart）" data-demo="none"></div>
+        <p>Kotlin 端在 <code>configureFlutterEngine</code> 裡註冊 handler。這是 <code>FlutterActivity</code>（或 <code>FlutterFragmentActivity</code>）提供的覆寫點，引擎建立後會呼叫一次：</p>
+        <div class="example" data-id="channel-register" data-right="channel-register.kt" data-right-label="MainActivity.kt" data-right-class="kotlin" data-demo="none"></div>
+        <p><code>result</code> 的三種回覆，在 Dart 端分別變成：</p>
+        <table class="compare">
+          <tr><th>Kotlin 端</th><th>Dart 端</th></tr>
+          <tr><td><code>result.success(value)</code></td><td><code>Future</code> 正常完成，得到 <code>value</code></td></tr>
+          <tr><td><code>result.error(code, message, details)</code></td><td>拋出 <code>PlatformException</code>，可以用 <code>e.code</code> 判斷錯誤種類</td></tr>
+          <tr><td><code>result.notImplemented()</code></td><td>拋出 <code>MissingPluginException</code></td></tr>
+          <tr><td>handler 沒有註冊（例如 channel 名稱打錯）</td><td>同樣是 <code>MissingPluginException</code></td></tr>
+        </table>
+        <aside class="warn">
+          <p>每次呼叫都<strong>必須</strong>回覆剛好一次。忘記呼叫 <code>result</code>，Dart 端的 <code>await</code> 會永遠等下去；回覆兩次則會拋出例外。用 coroutine 處理時，記得連例外的路徑也要回覆。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="codec">
+        <h2>可以傳哪些型別</h2>
+        <span class="part-label">說明</span>
+        <p>MethodChannel 預設使用 <code>StandardMessageCodec</code>，支援的型別對照如下：</p>
+        <table class="compare">
+          <tr><th>Dart</th><th>Kotlin</th></tr>
+          <tr><td><code>null</code></td><td><code>null</code></td></tr>
+          <tr><td><code>bool</code></td><td><code>Boolean</code></td></tr>
+          <tr><td><code>int</code></td><td>32 位元放得下時是 <code>Int</code>，否則是 <code>Long</code></td></tr>
+          <tr><td><code>double</code></td><td><code>Double</code></td></tr>
+          <tr><td><code>String</code></td><td><code>String</code></td></tr>
+          <tr><td><code>Uint8List</code>、<code>Int32List</code>、<code>Float64List</code> 等</td><td><code>ByteArray</code>、<code>IntArray</code>、<code>DoubleArray</code> 等</td></tr>
+          <tr><td><code>List</code></td><td><code>List</code>（實際是 <code>ArrayList</code>）</td></tr>
+          <tr><td><code>Map</code></td><td><code>Map</code>（實際是 <code>HashMap</code>）</td></tr>
+        </table>
+        <p>自訂的資料類別沒辦法直接傳，要自己轉成 <code>Map</code>，另一端再一個個欄位取出來轉型。<code>int</code> 會依大小變成 <code>Int</code> 或 <code>Long</code>，在 Kotlin 端轉型時特別容易出錯。這些麻煩正是後面 Pigeon 要解決的問題。</p>
+      </section>
+
+      <section class="lesson" id="event-channel">
+        <h2>EventChannel：原生端持續推送</h2>
+        <span class="part-label">說明</span>
+        <p>MethodChannel 是一問一答。要持續收到原生事件（感測器、廣播、下載進度），就用 <code>EventChannel</code>，Dart 端拿到的是 <code>Stream</code>。Kotlin 端的 <code>StreamHandler</code> 跟 <code>callbackFlow</code> 的結構幾乎一樣：</p>
+        <div class="example" data-id="channel-event" data-left="channel-event.kt" data-left-label="Android 端（Kotlin）" data-right-label="Flutter 端（Dart）" data-demo="none"></div>
+        <table class="compare">
+          <tr><th>callbackFlow</th><th>EventChannel.StreamHandler</th></tr>
+          <tr><td>開始 collect，區塊開始執行</td><td>Dart 端開始 <code>listen</code>，呼叫 <code>onListen</code></td></tr>
+          <tr><td><code>trySend(value)</code></td><td><code>events.success(value)</code></td></tr>
+          <tr><td><code>close(exception)</code></td><td><code>events.error(…)</code>，Dart 端的 Stream 收到錯誤</td></tr>
+          <tr><td><code>awaitClose { 取消註冊 }</code></td><td><code>onCancel</code></td></tr>
+        </table>
+        <p>Dart 端的 <code>receiveBroadcastStream()</code> 是 broadcast stream：多個 listener 共用同一個原生訂閱，第一個 listener 出現時呼叫 <code>onListen</code>，最後一個取消時才呼叫 <code>onCancel</code>。</p>
+      </section>
+
+      <section class="lesson" id="pigeon">
+        <h2>Pigeon：產生有型別的介面</h2>
+        <span class="part-label">說明</span>
+        <p>手寫 channel 的問題都出在「兩邊靠字串和 <code>Map</code> 約定」。<a href="https://pub.dev/packages/pigeon">Pigeon</a> 是 Flutter 團隊維護的程式碼產生器：你用 Dart 寫一份介面定義，它產生 Dart 端的呼叫代碼和 Kotlin 端的 interface，channel 名稱、序列化、轉型全部自動處理。概念上跟 Retrofit 從 interface 產生 HTTP 呼叫很像，或是 AIDL 之於 Binder。</p>
+        <p>先在 <code>pubspec.yaml</code> 的 <code>dev_dependencies</code> 加上 <code>pigeon</code>，再寫介面定義檔：</p>
+        <div class="example" data-id="pigeon-def" data-right="pigeon-def.dart" data-right-label="pigeons/messages.dart" data-demo="none"></div>
+        <p>執行產生器，會輸出 <code>lib/src/messages.g.dart</code> 和 <code>Messages.g.kt</code> 兩個檔案：</p>
+        <div class="code-panel"><pre><code>dart run pigeon --input pigeons/messages.dart</code></pre></div>
+        <p>Kotlin 端實作產生出來的 <code>DeviceApi</code> interface，Dart 端直接呼叫產生出來的 <code>DeviceApi</code> 類別：</p>
+        <div class="example" data-id="pigeon-api" data-left="pigeon-api.kt" data-left-label="Android 端（Kotlin）" data-right-label="Flutter 端（Dart）" data-demo="none"></div>
+        <ul>
+          <li><strong>型別錯誤在編譯時就會發現</strong>：介面改了卻沒更新實作，Kotlin 端直接編譯失敗。</li>
+          <li><strong>標上 <code>@async</code> 的方法會產生成 <code>suspend fun</code></strong>：可以直接用 <code>withContext</code> 切到背景執行緒，產生的代碼會等它完成再回覆。</li>
+          <li><strong>Dart 的 <code>int</code> 一律對應 <code>Long</code></strong>，不像 StandardMessageCodec 會依大小變成 <code>Int</code> 或 <code>Long</code>。</li>
+          <li><strong><code>@FlutterApi</code> 方向相反</strong>：Dart 端實作、Kotlin 端呼叫。下一頁「嵌入原生 View」會用它把 Compose 按鈕的點擊傳回 Flutter。</li>
+        </ul>
+        <aside class="tip">
+          <p>產生出來的 <code>*.g.dart</code> 和 <code>*.g.kt</code> 建議一起 commit，跟第 4 章 freezed 產生的檔案一樣。這樣其他人 clone 下來就能直接編譯，不需要先執行產生器。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="choose">
+        <h2>該用哪一種</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>做法</th><th>適合的情況</th></tr>
+          <tr><td>現成套件（pub.dev）</td><td>常見的系統功能。先找這個，找不到再自己寫</td></tr>
+          <tr><td><code>MethodChannel</code> / <code>EventChannel</code></td><td>一兩個簡單的呼叫、快速驗證想法</td></tr>
+          <tr><td>Pigeon</td><td>介面超過幾個方法、有自訂資料類別、需要長期維護。實務上的預設選擇</td></tr>
+          <tr><td>包成 Flutter plugin 套件</td><td>多個 App 要共用同一段原生代碼。plugin 就是「Dart API ＋ 各平台實作」打包在一起，內部通常也用 Pigeon</td></tr>
+        </table>
+        <p>另外還有一條路是 <a href="https://pub.dev/packages/jnigen">jnigen</a>：直接從 Java/Kotlin 類別產生 Dart 綁定，透過 JNI 同步呼叫，不經過 channel。它還在快速發展中，適合想直接呼叫大量 Android API 的情況，有興趣可以追蹤。</p>
+      </section>
+
+      <section class="lesson" id="threads">
+        <h2>執行緒注意事項</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li>Kotlin 端的 handler 在 <strong>Android 主執行緒</strong>上執行。Flutter 3.29 起，Dart 的 UI 執行緒和 Android 主執行緒合併成同一條，所以 handler 卡住主執行緒，Flutter 畫面也會跟著卡住。耗時的工作用 coroutine 切到 <code>Dispatchers.IO</code> 或 <code>Default</code>，完成後再回覆。</li>
+          <li><code>EventSink</code> 的方法要在主執行緒呼叫。從背景執行緒推送時，先切回 <code>Dispatchers.Main</code>。</li>
+          <li>Dart 端預設只有主 isolate 能使用 channel。要在背景 isolate 呼叫，需要先用 <code>BackgroundIsolateBinaryMessenger.ensureInitialized(token)</code> 初始化。</li>
+        </ul>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

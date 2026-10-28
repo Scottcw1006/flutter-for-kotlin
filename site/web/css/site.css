@@ -419,3 +419,9 @@ table.compare th { background: var(--bg-soft); }
 @media (max-width: 380px) {
   .device { width: 100%; }
 }
+
+/* 實機截圖（第 6 章：無法在網頁上執行的原生範例） */
+.shots { display: flex; justify-content: center; gap: 16px; margin: 20px 0; }
+.shots figure { margin: 0; flex: 0 1 260px; min-width: 0; text-align: center; }
+.shots img { width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 18px; }
+.shots figcaption { margin-top: 8px; font-size: 14px; color: var(--text-soft); }

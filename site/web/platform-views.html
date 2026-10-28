@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>嵌入原生 View · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 6 章 · 與 Android 串接</p>
+      <h1>嵌入原生 View</h1>
+      <p class="lead">上一頁是把 Flutter 放進 Android；這一頁反過來，在 Flutter 畫面裡放一個 Android 的 <code>View</code>。這個功能叫 <strong>platform view</strong>，作用就像 Compose 的 <code>AndroidView</code>：地圖、WebView、廣告、相機預覽這類只有原生版本的元件，都是靠它顯示在 Flutter 畫面裡。</p>
+
+      <aside class="tip">
+        <p>常用的原生元件都已經有包好的套件：<code>google_maps_flutter</code>、<code>webview_flutter</code>、<code>google_mobile_ads</code>、<code>camera</code>。它們內部就是用本頁的機制實作的。自己寫 platform view，通常是為了公司既有的自訂 View，或是某個只有 Android SDK 的第三方元件。</p>
+      </aside>
+
+      <section class="lesson" id="example">
+        <h2>範例：在 Flutter 裡放一個 Compose 元件</h2>
+        <span class="part-label">說明</span>
+        <p>範例專案 <code>samples/native_bridge/</code> 的最後一張卡片，嵌入了一個用 Compose 寫的計數按鈕。按下 Compose 按鈕，Flutter 這邊的文字也會同步更新：</p>
+        <div class="shots">
+          <figure>
+            <img src="img/native-bridge.png" alt="native_bridge 範例 App：最下方紫色區塊是嵌入的 Compose UI，按鈕顯示 3，下方 Flutter 文字顯示收到的點擊次數 3" loading="lazy">
+            <figcaption>最下面的紫色區塊是原生的 Compose UI</figcaption>
+          </figure>
+        </div>
+        <p>需要三個部分：</p>
+        <ol>
+          <li><strong>Kotlin 端的 <code>PlatformView</code></strong>：包住真正的 Android <code>View</code>，並在 <code>dispose()</code> 釋放資源。</li>
+          <li><strong><code>PlatformViewFactory</code></strong>：Dart 端每建立一個實例，就呼叫一次 <code>create()</code>；它的 <code>args</code> 是 Dart 傳來的初始參數。</li>
+          <li><strong>Dart 端的 <code>AndroidView</code></strong>：用 <code>viewType</code> 字串指定要建立哪一種 View。</li>
+        </ol>
+        <div class="example" data-id="platform-view" data-left="platform-view.kt" data-left-label="Android 端（Kotlin）" data-right-label="Flutter 端（Dart）" data-demo="none"></div>
+        <p>工廠要在引擎上註冊，名稱與 Dart 端的 <code>viewType</code> 相同（完整的 <code>MainActivity</code> 在上一頁）：</p>
+        <div class="code-panel"><pre><code class="language-kotlin">flutterEngine.platformViewsController.registry.registerViewFactory(
+    "f4k/compose-counter",
+    ComposeCounterFactory(NativeEvents(messenger)),
+)</code></pre></div>
+      </section>
+
+      <section class="lesson" id="compose-view">
+        <h2>嵌入 ComposeView 的陷阱</h2>
+        <span class="part-label">說明</span>
+        <p><code>ComposeView</code> 被加進畫面時，會沿著 View 樹往上找 <code>LifecycleOwner</code> 和 <code>SavedStateRegistryOwner</code>。<code>ComponentActivity</code> 會在 <code>setContentView</code> 時設定好這些，但 <code>FlutterActivity</code> 繼承的是一般的 <code>Activity</code>，沒有設定。範例實際測試的結果，App 一打開就崩潰：</p>
+        <div class="code-panel"><pre><code>java.lang.IllegalStateException: ViewTreeLifecycleOwner not found from io.flutter.embedding.android.FlutterView</code></pre></div>
+        <p>解法是讓 <code>MainActivity</code> 改為繼承 <code>FlutterFragmentActivity</code>，它是 <code>FragmentActivity</code>（也就是 <code>ComponentActivity</code>）的子類別。嵌入一般的 Android View（例如 <code>TextView</code>、<code>MapView</code>）沒有這個問題。</p>
+      </section>
+
+      <section class="lesson" id="communicate">
+        <h2>與原生 View 互相溝通</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li><strong>Dart → 原生，只在建立時</strong>：<code>creationParams</code>，經過 <code>creationParamsCodec</code> 編碼。範例用它傳入標題文字。</li>
+          <li><strong>之後的雙向溝通</strong>：用前一頁的 channel 或 Pigeon。範例用 Pigeon 的 <code>@FlutterApi</code>，讓 Compose 按鈕呼叫 Dart 端的 <code>onNativeButtonClicked</code>。</li>
+        </ul>
+        <aside class="warn">
+          <p>範例畫面上只有一個實例，所以全域的 channel 就夠用。同一個畫面有多個實例時，要讓每個實例用不同的 channel：<code>AndroidView</code> 的 <code>onPlatformViewCreated</code> 會給你 <code>viewId</code>，Kotlin 端的 <code>create()</code> 也拿得到同一個 <code>viewId</code>。手寫 channel 時把它加進名稱（例如 <code>f4k/counter_$viewId</code>）；Pigeon 則用 <code>messageChannelSuffix</code> 參數。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="modes">
+        <h2>合成模式：原生 View 是怎麼畫進 Flutter 的</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 畫面是一整塊自己繪製的 Surface（第 1 章），而 Android View 由系統繪製，兩者要疊在一起並不簡單。Flutter 提供幾種合成模式，由 Dart 端用哪個 API 決定：</p>
+        <table class="compare">
+          <tr><th>模式</th><th>Dart 端寫法</th><th>特性</th></tr>
+          <tr><td><strong>Texture Layer Hybrid Composition</strong>（TLHC）</td><td><code>AndroidView</code>（本範例）</td><td>原生 View 畫到一個 texture，再由 Flutter 合成。效能好，Flutter 畫面不受影響。不支援 <code>SurfaceView</code>，遇到時會退回其他模式</td></tr>
+          <tr><td><strong>Hybrid Composition</strong></td><td><code>PlatformViewLink</code> ＋ <code>PlatformViewsService.initExpensiveAndroidView</code></td><td>原生 View 直接放進 Android 的 View 階層，相容性最好（地圖、影片這類用 <code>SurfaceView</code> 的元件）。代價是 Flutter 的繪製也會受影響，整體幀率可能下降</td></tr>
+          <tr><td><strong>Virtual Display</strong></td><td>舊的退回選項</td><td>畫到虛擬螢幕再當成 texture。鍵盤輸入、無障礙等功能有限制，新代碼不建議使用</td></tr>
+        </table>
+        <p>大多數情況直接用 <code>AndroidView</code> 就好。原生元件畫面不正常（例如黑屏、不會更新）時，再改用 Hybrid Composition。</p>
+      </section>
+
+      <section class="lesson" id="cost">
+        <h2>成本與限制</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li><strong>每個 platform view 都有額外成本</strong>：不要把它放在會捲動的長列表裡大量建立。能用 Flutter widget 做到的 UI，就用 widget。</li>
+          <li><strong>大小由 Flutter 決定</strong>：platform view 和一般 widget 一樣受 constraints 限制（第 3 章）。範例用 <code>SizedBox(height: 140)</code> 給固定高度，原生 View 自己的 <code>wrap_content</code> 不會影響 Flutter 的版面。</li>
+          <li><strong>手勢衝突</strong>：原生 View 放在可捲動的 Flutter 容器裡時，拖曳手勢預設會被 Flutter 搶走。用 <code>AndroidView</code> 的 <code>gestureRecognizers</code> 指定哪些手勢交給原生 View，例如讓地圖可以拖曳。</li>
+          <li><strong>生命週期</strong>：widget 從樹上移除時，Flutter 會呼叫 <code>PlatformView.dispose()</code>。在這裡釋放資源，例如範例的 <code>disposeComposition()</code>、<code>MapView</code> 的 <code>onDestroy()</code>。</li>
+        </ul>
+        <p>反方向「在 Compose 裡放一小塊 Flutter UI」則是上一頁 add-to-app 的範圍：用 <code>AndroidView</code> 包住 <code>FlutterView</code>，再 attach 到一個 <code>FlutterEngine</code>。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>
