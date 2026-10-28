@@ -33,22 +33,27 @@ class _ComposeCounterState extends State<ComposeCounter> implements NativeEvents
 
   @override
   Widget build(BuildContext context) {
-    if (defaultTargetPlatform != TargetPlatform.android) {
-      return const Text('這個範例只支援 Android');
-    }
+    final nativeView = switch (defaultTargetPlatform) {
+      // viewType 對應原生端 registerViewFactory 的名稱
+      TargetPlatform.android => const AndroidView(
+        viewType: 'f4k/native-counter',
+        creationParams: {'title': '這是原生的 Compose UI'},
+        creationParamsCodec: StandardMessageCodec(),
+      ),
+      // iOS 端用 UiKitView，原生端是 SwiftUI（第 7 章）
+      TargetPlatform.iOS => const UiKitView(
+        viewType: 'f4k/native-counter',
+        creationParams: {'title': '這是原生的 SwiftUI'},
+        creationParamsCodec: StandardMessageCodec(),
+      ),
+      _ => const Center(child: Text('這個平台不支援')),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 8,
       children: [
         // 原生 View 和一般 widget 一樣受 constraints 限制，這裡給固定高度
-        const SizedBox(
-          height: 140,
-          child: AndroidView(
-            viewType: 'f4k/compose-counter', // 對應 registerViewFactory 的名稱
-            creationParams: {'title': '這是原生的 Compose UI'},
-            creationParamsCodec: StandardMessageCodec(),
-          ),
-        ),
+        SizedBox(height: 140, child: nativeView),
         Text('Flutter 收到的點擊次數：$_clicks'),
       ],
     );

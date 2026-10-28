@@ -26,7 +26,7 @@ class MainActivity : FlutterFragmentActivity() {
 
         // 4. Platform view：註冊工廠，Dart 端用 viewType 字串建立
         flutterEngine.platformViewsController.registry.registerViewFactory(
-            "f4k/compose-counter",
+            "f4k/native-counter",
             ComposeCounterFactory(NativeEvents(messenger)),
         )
     }

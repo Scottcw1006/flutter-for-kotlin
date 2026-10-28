@@ -227,7 +227,7 @@ class DeviceApi {
     return pigeonVar_replyValue! as DeviceInfo;
   }
 
-  /// @async：Kotlin 端拿到 callback，可以在背景執行完再回傳
+  /// @async：原生端可以在背景執行完再回傳（Kotlin 是 suspend fun，Swift 是 async）
   Future<String> sha256(String text) async {
     final pigeonVar_channelName = 'dev.flutter.pigeon.native_bridge.DeviceApi.sha256$pigeonVar_messageChannelSuffix';
     final pigeonVar_channel = BasicMessageChannel<Object?>(

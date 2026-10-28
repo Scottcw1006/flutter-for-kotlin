@@ -9,6 +9,8 @@ import 'package:pigeon/pigeon.dart';
     dartOut: 'lib/src/messages.g.dart',
     kotlinOut: 'android/app/src/main/kotlin/com/example/f4k/native_bridge/Messages.g.kt',
     kotlinOptions: KotlinOptions(package: 'com.example.f4k.native_bridge'),
+    // 同一份定義也能產生 iOS 的 Swift 代碼（第 7 章）
+    swiftOut: '../ios_snippets/Sources/Messages.g.swift',
     dartPackageName: 'native_bridge',
   ),
 )
@@ -26,7 +28,7 @@ class DeviceInfo {
 abstract class DeviceApi {
   DeviceInfo getDeviceInfo();
 
-  /// @async：Kotlin 端拿到 callback，可以在背景執行完再回傳
+  /// @async：原生端可以在背景執行完再回傳（Kotlin 是 suspend fun，Swift 是 async）
   @async
   String sha256(String text);
 }

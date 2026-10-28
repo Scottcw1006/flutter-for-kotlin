@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>給 Android 開發者的 iOS 知識 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 7 章 · iOS 相關知識</p>
+      <h1>給 Android 開發者的 iOS 知識</h1>
+      <p class="lead">Flutter 讓同一份 Dart 代碼跑在 iOS 上，但 iOS 版的建置、簽章、權限、原生串接，還是得照 Apple 的規則來。這一頁用 Android 的概念一一對照，說明一個 Kotlin 開發者第一次碰 iOS 時需要知道的事。原生代碼的部分用 Swift，並列在對應的 Kotlin 代碼旁邊。</p>
+
+      <aside class="tip">
+        <p><strong>一定要有 Mac。</strong>iOS App 只能用 Xcode 建置，Xcode 只能在 macOS 上執行。沒有 Mac 的團隊，可以用 macOS 的 CI 機器建置與上架，但開發和除錯時，還是很難不用 Mac。</p>
+      </aside>
+
+      <section class="lesson" id="tools">
+        <h2>工具與專案設定對照</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Android</th><th>iOS</th><th>說明</th></tr>
+          <tr><td>Android Studio</td><td>Xcode</td><td>Flutter 代碼可以繼續在 Android Studio 或 VS Code 寫，只有改 iOS 原生設定時才需要開 Xcode</td></tr>
+          <tr><td>Gradle</td><td>Xcode build system（<code>xcodebuild</code>）</td><td><code>flutter build ios</code> 背後就是呼叫 <code>xcodebuild</code></td></tr>
+          <tr><td><code>build.gradle.kts</code></td><td><code>project.pbxproj</code>、<code>*.xcconfig</code></td><td><code>pbxproj</code> 是 Xcode 產生的格式，很難手動編輯，多半在 Xcode 的介面裡修改</td></tr>
+          <tr><td><code>AndroidManifest.xml</code></td><td><code>Info.plist</code></td><td>App 名稱、權限說明文字、URL scheme 等設定</td></tr>
+          <tr><td><code>applicationId</code></td><td>Bundle Identifier</td><td>App 的唯一識別碼，例如 <code>com.example.todo</code></td></tr>
+          <tr><td><code>versionName</code> / <code>versionCode</code></td><td><code>CFBundleShortVersionString</code> / <code>CFBundleVersion</code></td><td>兩邊都由 <code>pubspec.yaml</code> 的 <code>version: 1.2.0+5</code> 自動帶入</td></tr>
+          <tr><td><code>minSdk</code></td><td>Deployment Target</td><td>支援的最低系統版本。目前 Flutter 範本的預設是 iOS 15.0</td></tr>
+          <tr><td><code>res/</code>（drawable、mipmap）</td><td><code>Assets.xcassets</code></td><td>App icon、啟動畫面圖片</td></tr>
+          <tr><td>Build type ＋ product flavor</td><td>Build configuration ＋ scheme</td><td>第 8 章說明</td></tr>
+          <tr><td>Emulator</td><td>Simulator</td><td>Simulator 執行的是編譯給 Mac 的程式，不是模擬完整的手機。速度很快，但相機、推播等功能有限制，上架前一定要用實機測試</td></tr>
+        </table>
+        <p>Flutter 專案的 <code>ios/</code> 目錄裡，主要會碰到的檔案：</p>
+        <table class="compare">
+          <tr><th>檔案</th><th>Android 對應</th><th>用途</th></tr>
+          <tr><td><code>Runner/AppDelegate.swift</code></td><td><code>Application</code>＋<code>MainActivity</code></td><td>App 進入點，註冊原生 channel 的地方</td></tr>
+          <tr><td><code>Runner/SceneDelegate.swift</code></td><td><code>Activity</code> 的生命週期</td><td>管理視窗（scene）的生命週期，Flutter 範本已經寫好</td></tr>
+          <tr><td><code>Runner/Info.plist</code></td><td><code>AndroidManifest.xml</code></td><td>權限說明、App 設定</td></tr>
+          <tr><td><code>Runner.xcworkspace</code></td><td>用 Android Studio 開啟的專案根目錄</td><td>用 Xcode 開啟時開這個，<strong>不要</strong>開 <code>Runner.xcodeproj</code>，否則看不到依賴的套件</td></tr>
+          <tr><td><code>Flutter/*.xcconfig</code></td><td><code>local.properties</code></td><td>Flutter SDK 路徑、建置模式等，大多是自動產生的</td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="deps">
+        <h2>依賴管理：Swift Package Manager 與 CocoaPods</h2>
+        <span class="part-label">說明</span>
+        <p>Android 的原生依賴由 Gradle 從 Maven 下載。iOS 有兩套工具：</p>
+        <ul>
+          <li><strong>Swift Package Manager（SPM）</strong>：Apple 官方的套件管理，整合在 Xcode 裡。目前版本的 Flutter 預設啟用（<code>flutter config</code> 的 <code>enable-swift-package-manager</code> 預設為開啟），plugin 的 iOS 原生代碼會以 Swift package 的形式加入專案。</li>
+          <li><strong>CocoaPods</strong>：過去的主流，用 <code>Podfile</code> 宣告依賴、<code>pod install</code> 安裝。還沒支援 SPM 的 plugin，Flutter 會自動退回用 CocoaPods 處理，這時 <code>ios/</code> 裡會出現 <code>Podfile</code>。</li>
+        </ul>
+        <p>平常只要執行 <code>flutter pub get</code> 或 <code>flutter run</code>，Flutter 會處理好這兩套工具。需要自己介入的情況，多半是某個 plugin 要求提高 Deployment Target，或是 CocoaPods 的快取出問題（這時常見的解法是刪掉 <code>ios/Pods</code> 和 <code>Podfile.lock</code> 再執行一次）。</p>
+      </section>
+
+      <section class="lesson" id="lifecycle">
+        <h2>App 生命週期</h2>
+        <span class="part-label">說明</span>
+        <p>在 Flutter 裡不需要直接處理原生的生命週期，統一用 <code>AppLifecycleListener</code> 或 <code>WidgetsBindingObserver</code> 收到 <code>AppLifecycleState</code>。但兩個平台觸發狀態的時機不完全一樣：</p>
+        <table class="compare">
+          <tr><th>Flutter 狀態</th><th>Android</th><th>iOS</th></tr>
+          <tr><td><code>resumed</code></td><td><code>onResume</code> 之後，可以互動</td><td>scene 進入 active，可以互動</td></tr>
+          <tr><td><code>inactive</code></td><td>Activity 可見但失去焦點，例如分割畫面時操作另一個 App</td><td>暫時失去焦點：來電、拉下控制中心、進入 App 切換畫面</td></tr>
+          <tr><td><code>hidden</code></td><td>所有畫面都看不到了，即將進入 <code>paused</code></td><td>同左</td></tr>
+          <tr><td><code>paused</code></td><td><code>onStop</code> 之後，在背景</td><td>進入背景。iOS 很快就會暫停背景 App 的執行，要在背景工作必須申請特定的背景模式</td></tr>
+          <tr><td><code>detached</code></td><td>引擎還在，但沒有任何畫面（例如最後一個 Activity 被銷毀）</td><td>App 即將結束時，不保證會收到</td></tr>
+        </table>
+        <p>最大的差別在背景執行：Android 可以用 WorkManager 或前景服務長時間在背景工作，iOS 則嚴格得多，只有音樂播放、定位、VoIP 這類特定用途能持續在背景執行，一般工作只能用 <code>BGTaskScheduler</code> 由系統決定何時執行。</p>
+      </section>
+
+      <section class="lesson" id="permissions">
+        <h2>權限</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th></th><th>Android</th><th>iOS</th></tr>
+          <tr><td>宣告</td><td><code>AndroidManifest.xml</code> 的 <code>&lt;uses-permission&gt;</code></td><td><code>Info.plist</code> 的用途說明，例如 <code>NSCameraUsageDescription</code>，值是顯示給使用者看的文字</td></tr>
+          <tr><td>忘記宣告</td><td>請求時直接被拒絕</td><td><strong>App 直接崩潰</strong>，而且審核時也會被退件</td></tr>
+          <tr><td>請求次數</td><td>被拒絕後可以再問，系統會限制次數；可以用 <code>shouldShowRequestPermissionRationale</code> 判斷要不要先說明</td><td>系統對話框只會出現<strong>一次</strong>。被拒絕後只能引導使用者到「設定」App 手動開啟</td></tr>
+        </table>
+        <p>Flutter 這邊通常用 <a href="https://pub.dev/packages/permission_handler">permission_handler</a> 統一處理兩個平台的請求流程；兩邊的宣告檔還是要自己加。也因為 iOS 只能問一次，建議在真正需要的時候才請求，並在請求前先用自己的畫面說明用途。</p>
+      </section>
+
+      <section class="lesson" id="signing">
+        <h2>簽章：跟 Android 差最多的地方</h2>
+        <span class="part-label">說明</span>
+        <p>Android 的簽章很單純：自己用 <code>keytool</code> 產生一個 keystore，所有版本都用它簽，裝置上不檢查是誰簽的。iOS 則由 Apple 掌控整個流程，<strong>連裝到自己的手機上測試都要簽章</strong>：</p>
+        <table class="compare">
+          <tr><th>iOS 的東西</th><th>是什麼</th><th>Android 最接近的概念</th></tr>
+          <tr><td>Apple Developer Program</td><td>付費會員（每年 99 美元），才能上架與使用推播等功能。只用個人 Apple ID 也能裝到自己的手機，但簽章 7 天後就會過期</td><td>Google Play 開發者帳號（一次性費用）</td></tr>
+          <tr><td>憑證（Certificate）</td><td>Apple 簽發給你的開發或發佈用憑證，私鑰存在你的 Mac 的鑰匙圈裡</td><td>keystore 裡的 key，但由 Apple 簽發</td></tr>
+          <tr><td>App ID</td><td>在 Apple 後台註冊的 Bundle Identifier，以及它開啟的功能（推播、Sign in with Apple…）</td><td><code>applicationId</code></td></tr>
+          <tr><td>Provisioning profile</td><td>把「憑證＋App ID＋可安裝的裝置清單＋功能」綁在一起的檔案。開發用的版本只能裝在登記過的裝置上</td><td>沒有對應</td></tr>
+          <tr><td>Entitlements</td><td>App 使用的功能清單（<code>Runner.entitlements</code>），必須和 provisioning profile 一致</td><td>Manifest 裡的部分權限與功能宣告</td></tr>
+        </table>
+        <p>實務上，在 Xcode 的 <strong>Signing &amp; Capabilities</strong> 分頁勾選「Automatically manage signing」並選擇 Team，Xcode 會自動建立與更新憑證和 provisioning profile。第一次在實機執行 <code>flutter run</code> 前，先用 Xcode 開啟 <code>Runner.xcworkspace</code> 完成這一步。上架用的發佈簽章與 CI 上的簽章設定，留到第 8 章。</p>
+      </section>
+
+      <section class="lesson" id="swift">
+        <h2>Swift 給 Kotlin 開發者</h2>
+        <span class="part-label">說明</span>
+        <p>寫 Flutter 時，Swift 只會出現在原生串接的少量代碼裡。好消息是 Swift 和 Kotlin 很像，讀懂不難：</p>
+        <table class="compare">
+          <tr><th>Kotlin</th><th>Swift</th></tr>
+          <tr><td><code>val</code> / <code>var</code></td><td><code>let</code> / <code>var</code></td></tr>
+          <tr><td><code>String?</code>、<code>?.</code>、<code>?:</code></td><td><code>String?</code>、<code>?.</code>、<code>??</code></td></tr>
+          <tr><td><code>x?.let { … }</code></td><td><code>if let x { … }</code>、<code>guard let x else { return }</code></td></tr>
+          <tr><td><code>interface</code></td><td><code>protocol</code></td></tr>
+          <tr><td>extension function</td><td><code>extension</code>（可以替既有型別加上方法，甚至讓它實作 protocol）</td></tr>
+          <tr><td><code>data class</code></td><td><code>struct</code>：<strong>值型別</strong>，指派時會複製，不是共用同一個物件</td></tr>
+          <tr><td><code>when</code></td><td><code>switch</code>（必須涵蓋所有情況，不會往下貫穿）</td></tr>
+          <tr><td><code>suspend fun</code>、<code>launch</code></td><td><code>func load() async</code>、<code>Task { }</code></td></tr>
+          <tr><td>lambda <code>{ x -&gt; … }</code></td><td>closure <code>{ x in … }</code>；需要在函式結束後保留時要標 <code>@escaping</code></td></tr>
+          <tr><td>GC</td><td>ARC（引用計數）：互相持有會造成記憶體洩漏，closure 裡常用 <code>[weak self]</code></td></tr>
+        </table>
+        <p>UI 框架也一樣：<strong>SwiftUI</strong> 是 Apple 的宣告式 UI，跟 Compose 幾乎是同一套想法。下面是第 3 章的計數器，左邊是 Compose，右邊是 SwiftUI：</p>
+        <div class="example" data-id="ui-state" data-kotlin="ui-state" data-right="ui-state.swift" data-right-label="SwiftUI（Swift）" data-right-class="swift" data-demo="none"></div>
+        <p>舊的 iOS 代碼則多半使用 <strong>UIKit</strong>（<code>UIViewController</code>、<code>UIView</code>），地位相當於 Android 的 View 系統。Flutter 的原生 API 也是以 UIKit 為主：Flutter 畫面本身就是一個 <code>FlutterViewController</code>。</p>
+      </section>
+
+      <section class="lesson" id="channels">
+        <h2>原生串接：Swift 版</h2>
+        <span class="part-label">說明</span>
+        <p>第 6 章的 channel、Pigeon、platform view，iOS 端都有一模一樣的結構。Dart 端的代碼<strong>完全不用改</strong>，只要在 iOS 端用 Swift 實作同名的 channel。以下的 Swift 代碼放在 <code>samples/ios_snippets/</code>，對照的是第 6 章 <code>native_bridge</code> 的 Kotlin 代碼。</p>
+        <h3>註冊 channel</h3>
+        <p>新版的 Flutter iOS 範本，在 <code>AppDelegate</code> 實作 <code>FlutterImplicitEngineDelegate</code>，引擎建立後會呼叫 <code>didInitializeImplicitFlutterEngine</code>，地位相當於 Android 的 <code>configureFlutterEngine</code>：</p>
+        <div class="example" data-id="channel-register" data-left="channel-register.kt" data-left-label="Android（Kotlin）" data-right="channel-register.swift" data-right-label="iOS（Swift）" data-right-class="swift" data-demo="none"></div>
+        <h3>MethodChannel</h3>
+        <p>Kotlin 的 <code>result.success</code> / <code>error</code> / <code>notImplemented</code>，在 Swift 裡都是呼叫同一個 <code>result</code> closure，只是傳入的值不同：一般的值、<code>FlutterError</code>，或 <code>FlutterMethodNotImplemented</code>。</p>
+        <div class="example" data-id="channel-method" data-left="channel-method.kt" data-left-label="Android（Kotlin）" data-right="channel-method.swift" data-right-label="iOS（Swift）" data-right-class="swift" data-demo="none"></div>
+        <h3>Pigeon</h3>
+        <p>在 Pigeon 的介面定義加上 <code>swiftOut</code>，同一份定義就會再產生一個 Swift 檔。<code>@async</code> 方法在 Kotlin 是 <code>suspend fun</code>，在 Swift 是 <code>async</code> 函式：</p>
+        <div class="example" data-id="pigeon-api" data-left="pigeon-api.kt" data-left-label="Android（Kotlin）" data-right="pigeon-api.swift" data-right-label="iOS（Swift）" data-right-class="swift" data-demo="none"></div>
+        <h3>Platform view</h3>
+        <p>Dart 端改用 <code>UiKitView</code>（第 6 章的 <code>native_view.dart</code> 已經依平台切換）。原生端用 <code>UIHostingController</code> 把 SwiftUI 包成 <code>UIView</code>，角色就跟 <code>ComposeView</code> 一樣：</p>
+        <div class="example" data-id="platform-view" data-left="platform-view.kt" data-left-label="Android（Kotlin）" data-right="platform-view.swift" data-right-label="iOS（Swift）" data-right-class="swift" data-demo="none"></div>
+        <aside class="warn">
+          <p>iOS 的工廠要覆寫 <code>createArgsCodec()</code> 並回傳 <code>FlutterStandardMessageCodec</code>，否則 <code>create</code> 收到的 <code>args</code> 永遠是 <code>nil</code>。Android 是在建構 <code>PlatformViewFactory</code> 時傳入 codec，比較不容易漏掉。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="add-to-app">
+        <h2>Add-to-app：嵌入既有的 iOS App</h2>
+        <span class="part-label">說明</span>
+        <p>第 6 章的 Flutter 模組 <code>todo_module</code> 不用改任何代碼，就能嵌入 iOS App。iOS 宿主有兩種引入方式，跟 Android 的「原始碼引入」與「AAR」對應：</p>
+        <table class="compare">
+          <tr><th>方式</th><th>做法</th></tr>
+          <tr><td>CocoaPods</td><td>宿主的 <code>Podfile</code> 載入模組的 <code>.ios/Flutter/podhelper.rb</code>，並呼叫 <code>install_all_flutter_pods</code>，之後執行 <code>pod install</code>。相當於 Android 的原始碼引入</td></tr>
+          <tr><td>預先建置的 framework</td><td>在模組執行 <code>flutter build ios-framework</code>，產生 <code>Flutter.xcframework</code>、<code>App.xcframework</code>（你的 Dart 代碼）與各 plugin 的 framework，再加進 Xcode 專案。相當於 AAR，宿主團隊不需要安裝 Flutter</td></tr>
+        </table>
+        <p>引擎的暖機與 Android 相同：在 <code>AppDelegate</code> 建立 <code>FlutterEngine</code> 並呼叫 <code>run()</code>，然後一直持有它：</p>
+        <div class="example" data-id="a2a-engine" data-left="a2a-engine.kt" data-left-label="Android 宿主（Kotlin）" data-right="a2a-engine.swift" data-right-label="iOS 宿主（Swift）" data-right-class="swift" data-demo="none"></div>
+        <p>顯示 Flutter 畫面時，用暖機好的引擎建立 <code>FlutterViewController</code>。在 SwiftUI 裡要先用 <code>UIViewControllerRepresentable</code> 包一層，這就跟在 Compose 裡用 <code>AndroidView</code> 包住 View 一樣：</p>
+        <div class="example" data-id="a2a-open" data-left="a2a-open.kt" data-left-label="Android 宿主（Kotlin）" data-right="a2a-open.swift" data-right-label="iOS 宿主（Swift）" data-right-class="swift" data-demo="none"></div>
+      </section>
+
+      <section class="lesson" id="platform-ui">
+        <h2>同一份 Flutter 代碼，在 iOS 上會有哪些不同</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 會自己繪製所有 UI，所以 Material 元件在 iPhone 上看起來還是 Material。不過有些行為會自動依平台調整，有些則需要你自己處理：</p>
+        <table class="compare">
+          <tr><th>項目</th><th>Flutter 的預設行為</th><th>要注意的地方</th></tr>
+          <tr><td>返回</td><td>iOS 沒有系統返回鍵。<code>MaterialPageRoute</code> 在 iOS 上會改用從右滑入的轉場，並支援從左邊緣滑動返回</td><td>只能靠返回鍵離開的畫面（例如 Android 上沒有返回按鈕的頁面），在 iOS 上要自己放一個返回按鈕</td></tr>
+          <tr><td>捲動</td><td>iOS 上預設是回彈效果（<code>BouncingScrollPhysics</code>），Android 是邊緣發光或拉伸效果</td><td>通常不用處理</td></tr>
+          <tr><td>安全區域</td><td>瀏海、動態島、底部的 home indicator 會遮住內容</td><td>用 <code>Scaffold</code> 的 <code>AppBar</code> 時已經處理好；自己排版的畫面要用 <code>SafeArea</code></td></tr>
+          <tr><td>平台風格元件</td><td>Material 元件在兩個平台長得一樣</td><td>想要 iOS 原生的外觀，可以用 <code>Switch.adaptive</code>、<code>CircularProgressIndicator.adaptive</code> 這類 <code>.adaptive</code> 建構子，或 <code>cupertino</code> 函式庫的元件</td></tr>
+          <tr><td>字型</td><td>預設使用系統字型：Android 是 Roboto，iOS 是 San Francisco</td><td>用自訂字型就會兩邊一致</td></tr>
+        </table>
+        <p>要判斷目前在哪個平台，用 <code>Theme.of(context).platform</code> 或 <code>defaultTargetPlatform</code>，而不是 <code>dart:io</code> 的 <code>Platform.isIOS</code>：前兩者在測試時可以覆寫，也能在 Web 上使用。</p>
+      </section>
+
+      <section class="lesson" id="verify">
+        <h2>這一章的 Swift 代碼怎麼確認可用</h2>
+        <span class="part-label">說明</span>
+        <p>這個 repo 沒有 iOS 專案，<code>samples/ios_snippets/</code> 只放 Swift 原始碼。為了確保網頁上的 Swift 代碼真的能編譯，<code>typecheck.sh</code> 直接用 Flutter SDK 內附的 <code>Flutter.xcframework</code> 對它們做型別檢查，CI 也會執行：</p>
+        <div class="code-panel"><pre><code>flutter precache --ios
+samples/ios_snippets/typecheck.sh</code></pre></div>
+        <p>想在 iPhone 上實際執行第 6 章的範例，可以在 <code>samples/native_bridge</code> 執行 <code>flutter create --platforms ios .</code> 產生 iOS 專案，再把這些 Swift 檔加進 <code>Runner</code>，並讓 <code>AppDelegate</code> 實作 <code>NativeBridgeAppDelegate</code> 的內容。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/swift.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

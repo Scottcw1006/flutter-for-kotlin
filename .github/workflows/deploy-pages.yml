@@ -62,6 +62,19 @@ jobs:
           cd ../android_host
           ./gradlew :app:assembleDebug
 
+  # 第 7 章的 Swift 代碼：沒有 Xcode 專案，直接對 Flutter.xcframework 做型別檢查
+  ios-snippets:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.8
+          channel: stable
+          cache: true
+      - run: flutter precache --ios
+      - run: samples/ios_snippets/typecheck.sh
+
   site:
     runs-on: ubuntu-latest
     steps:
@@ -97,7 +110,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/main'
-    needs: [android-samples, flutter-samples, site]
+    needs: [android-samples, flutter-samples, ios-snippets, site]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

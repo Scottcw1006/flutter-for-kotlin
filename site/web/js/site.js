@@ -50,7 +50,7 @@ const CHAPTERS = [
   },
   {
     group: "7 · iOS 相關知識",
-    items: [{ title: "給 Android 開發者的 iOS 知識" }],
+    items: [{ href: "ios.html", title: "給 Android 開發者的 iOS 知識" }],
   },
   {
     group: "8 · 打包與發佈",

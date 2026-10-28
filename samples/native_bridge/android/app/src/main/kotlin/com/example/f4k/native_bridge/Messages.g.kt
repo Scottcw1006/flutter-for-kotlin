@@ -279,7 +279,7 @@ private open class MessagesPigeonCodec : StandardMessageCodec() {
  */
 interface DeviceApi {
   fun getDeviceInfo(): DeviceInfo
-  /** @async：Kotlin 端拿到 callback，可以在背景執行完再回傳 */
+  /** @async：原生端可以在背景執行完再回傳（Kotlin 是 suspend fun，Swift 是 async） */
   suspend fun sha256(text: String): String
 
   companion object {

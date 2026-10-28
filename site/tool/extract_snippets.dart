@@ -12,7 +12,7 @@ const sourceDirs = [
   '../samples',
 ];
 
-const extensions = {'.dart', '.kt', '.kts', '.yaml', '.xml'};
+const extensions = {'.dart', '.kt', '.kts', '.swift', '.yaml', '.xml'};
 
 final _start = RegExp(r'^\s*(?://|#|<!--) \[snippet:([\w-]+)\](?: -->)?\s*$');
 final _end = RegExp(r'^\s*(?://|#|<!--) \[/snippet\](?: -->)?\s*$');

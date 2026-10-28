@@ -16,6 +16,7 @@
   --kotlin: #a98bff;
   --dart: #40c4ff;
   --cpp: #f0a050;
+  --swift: #f05138;
   --os: #9aa5b1;
   --font: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "PingFang TC", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -251,6 +252,7 @@ table.compare th { background: var(--bg-soft); }
 .part-label.kotlin::before { background: var(--kotlin); }
 .part-label.dart::before { background: var(--dart); }
 .part-label.cpp::before { background: var(--cpp); }
+.part-label.swift::before { background: var(--swift); }
 .part-label.os::before { background: var(--os); }
 
 /* ---------- Example: Compose 代碼 | Flutter 代碼，下方實際呈現 ---------- */

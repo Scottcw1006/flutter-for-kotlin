@@ -40,12 +40,12 @@
         <ol>
           <li><strong>Kotlin 端的 <code>PlatformView</code></strong>：包住真正的 Android <code>View</code>，並在 <code>dispose()</code> 釋放資源。</li>
           <li><strong><code>PlatformViewFactory</code></strong>：Dart 端每建立一個實例，就呼叫一次 <code>create()</code>；它的 <code>args</code> 是 Dart 傳來的初始參數。</li>
-          <li><strong>Dart 端的 <code>AndroidView</code></strong>：用 <code>viewType</code> 字串指定要建立哪一種 View。</li>
+          <li><strong>Dart 端的 <code>AndroidView</code></strong>：用 <code>viewType</code> 字串指定要建立哪一種 View。iOS 上改用 <code>UiKitView</code>，原生端的 SwiftUI 版本見<a href="ios.html#channels">第 7 章</a>。</li>
         </ol>
         <div class="example" data-id="platform-view" data-left="platform-view.kt" data-left-label="Android 端（Kotlin）" data-right-label="Flutter 端（Dart）" data-demo="none"></div>
         <p>工廠要在引擎上註冊，名稱與 Dart 端的 <code>viewType</code> 相同（完整的 <code>MainActivity</code> 在上一頁）：</p>
         <div class="code-panel"><pre><code class="language-kotlin">flutterEngine.platformViewsController.registry.registerViewFactory(
-    "f4k/compose-counter",
+    "f4k/native-counter",
     ComposeCounterFactory(NativeEvents(messenger)),
 )</code></pre></div>
       </section>

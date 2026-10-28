@@ -19,10 +19,11 @@ samples/android/              # Android 原生端範例（Gradle 專案）
 └── compose-reference/        # 網頁上「Compose（Kotlin）」欄位的代碼，CI 會編譯
 samples/native_bridge/        # 第 6 章：MethodChannel、EventChannel、Pigeon、platform view
 samples/add_to_app/           # 第 6 章：Android 宿主 App（android_host）＋ Flutter 模組（todo_module）
+samples/ios_snippets/         # 第 7 章：Swift 版的原生串接代碼（不是 Xcode 專案，用 typecheck.sh 做型別檢查）
 site/web/img/                 # 原生範例在模擬器上的截圖（無法在網頁上執行的 demo）
 ```
 
-網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/` 擷取（支援 `.dart`、`.kt`、`.kts`，以及用 `# [snippet:id]` 標記的 `.yaml`、用 `<!-- [snippet:id] -->` 標記的 `.xml`），代碼與畫面不會不同步。
+網頁上顯示的代碼都由 `extract_snippets.dart` 從 `site/lib`、`todo_app`、`samples/` 擷取（支援 `.dart`、`.kt`、`.kts`、`.swift`，以及用 `# [snippet:id]` 標記的 `.yaml`、用 `<!-- [snippet:id] -->` 標記的 `.xml`），代碼與畫面不會不同步。
 
 ## 第 6 章的原生範例
 
@@ -35,7 +36,14 @@ cd samples/add_to_app/todo_module && flutter pub get
 cd ../android_host && ./gradlew :app:installDebug
 ```
 
-修改 Pigeon 介面（`samples/native_bridge/pigeons/messages.dart`）之後，執行 `dart run pigeon --input pigeons/messages.dart` 重新產生代碼，產生的檔案一併 commit。
+修改 Pigeon 介面（`samples/native_bridge/pigeons/messages.dart`）之後，執行 `dart run pigeon --input pigeons/messages.dart` 重新產生代碼（包含 `samples/ios_snippets` 的 Swift 版），產生的檔案一併 commit。
+
+第 7 章的 Swift 代碼沒有 Xcode 專案，用 Flutter SDK 內附的 `Flutter.xcframework` 做型別檢查（需要 macOS 與 Xcode）：
+
+```bash
+flutter precache --ios
+samples/ios_snippets/typecheck.sh
+```
 
 ## 本機執行
 
@@ -108,4 +116,4 @@ CI 會執行 `python3 tool/subset_cjk_font.py --check`，有字沒被涵蓋時�
 
 ## 部署
 
-push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼與第 6 章的原生範例、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。
+push 到 `main` 時，GitHub Actions（`.github/workflows/deploy-pages.yml`）會編譯 Compose 對照代碼與第 6、7 章的原生範例、跑 `todo_app` 測試、建置網站並部署到 GitHub Pages。
