@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ViewModel 與狀態管理 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 4 章 · 邏輯與架構對照</p>
+      <h1>ViewModel 與狀態管理</h1>
+      <p class="lead">Android 有官方的標準答案：<code>ViewModel</code> 加 <code>StateFlow</code>，再用 Hilt 注入依賴。Flutter 官方沒有規定，社群有好幾套做法。這份教學用 <strong>Riverpod</strong>，因為它一個套件同時處理「畫面狀態」和「依賴注入」，對應關係最直接。</p>
+      <table class="compare">
+        <tr><th>Android</th><th>Riverpod</th></tr>
+        <tr><td><code>ViewModel</code></td><td><code>Notifier</code>、<code>AsyncNotifier</code>、<code>StreamNotifier</code></td></tr>
+        <tr><td><code>MutableStateFlow</code> 加 <code>asStateFlow()</code></td><td><code>state</code>：只有 Notifier 自己能改，外面只能讀</td></tr>
+        <tr><td><code>collectAsStateWithLifecycle()</code></td><td><code>ref.watch(provider)</code></td></tr>
+        <tr><td><code>onClick = viewModel::increment</code></td><td><code>ref.read(provider.notifier).increment()</code></td></tr>
+        <tr><td><code>map</code>、<code>combine</code> 加 <code>stateIn</code></td><td>一個 <code>ref.watch</code> 其他 provider 的 <code>Provider</code></td></tr>
+        <tr><td>自訂的 <code>UiState</code>（Loading / Success / Error）</td><td>內建的 <code>AsyncValue</code>（<code>AsyncLoading</code> / <code>AsyncData</code> / <code>AsyncError</code>）</td></tr>
+        <tr><td>Hilt 的 <code>@Inject</code>、<code>@Module</code></td><td>provider 之間互相 <code>ref.watch</code>、<code>ProviderScope</code> 的 <code>overrides</code></td></tr>
+      </table>
+
+      <section class="lesson" id="notifier">
+        <h2>Notifier 與 ViewModel</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li><code>Notifier</code> 的 <code>build()</code> 回傳初始狀態，方法裡直接改 <code>state</code>，相當於 <code>_count.update { }</code>。</li>
+          <li><code>NotifierProvider</code> 是一個<strong>全域變數</strong>，但它不是單例的狀態：狀態實際存在 App 最外層的 <code>ProviderScope</code> 裡。所以測試時可以換掉，每個 <code>ProviderScope</code> 也都有自己的一份。</li>
+          <li>要讀取 provider，widget 改繼承 <code>ConsumerWidget</code>，<code>build()</code> 會多一個 <code>WidgetRef ref</code> 參數。</li>
+        </ul>
+        <div class="example" data-id="state-viewmodel" data-kotlin="state-viewmodel" data-height="220" data-hint="上面的數字和下面的按鈕是兩個獨立的 widget，都直接連到同一個 counterProvider。"></div>
+        <aside class="warn">
+          <p><strong><code>ref.watch</code> 和 <code>ref.read</code> 的分工：</strong>在 <code>build()</code> 裡讀取要顯示的資料用 <code>watch</code>，它會在值改變時重建 widget；在 <code>onPressed</code> 這類回呼裡呼叫方法用 <code>read</code>，它只讀一次、不訂閱。在 <code>build()</code> 裡用 <code>read</code> 會讓畫面不更新，在回呼裡用 <code>watch</code> 則會報錯。</p>
+        </aside>
+        <p>兩邊的組織方式有一個差別。Compose 的慣例是在畫面這一層 collect 一次，再把值和回呼一路傳給子元件。Riverpod 則讓任何一個 widget 都能直接訂閱 provider，不用一層層傳下去。後者比較方便，但可以重複使用的小元件仍然建議用參數傳值，讓它不依賴特定的 provider。</p>
+      </section>
+
+      <section class="lesson" id="derived">
+        <h2>衍生狀態</h2>
+        <span class="part-label">說明</span>
+        <p>在 ViewModel 裡用 <code>map</code> 或 <code>combine</code> 從一個 Flow 算出另一個，Riverpod 的寫法是：寫一個新的 <code>Provider</code>，在裡面 <code>ref.watch</code> 它依賴的 provider。依賴的值一變，它就會自動重新計算，沒變就沿用快取。</p>
+        <div class="example" data-id="state-derived" data-kotlin="state-derived" data-height="360" data-hint="輸入「台」看看，清單會即時過濾。"></div>
+        <ul>
+          <li>不需要 <code>stateIn</code>、<code>SharingStarted</code> 這類設定，Riverpod 會自己管理訂閱與快取。</li>
+          <li>只想在某個欄位變動時才重建，可以用 <code>ref.watch(provider.select((s) =&gt; s.欄位))</code>，效果類似 <code>map { }.distinctUntilChanged()</code>。待辦 App 的詳細頁就用它來挑出單一筆待辦。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="async">
+        <h2>非同步狀態與 AsyncValue</h2>
+        <span class="part-label">說明</span>
+        <p>Android 慣例是自己定義 <code>UiState</code> sealed interface 來表示載入中、成功、失敗。Riverpod 內建了 <code>AsyncValue</code>，<code>FutureProvider</code>、<code>StreamProvider</code>、<code>AsyncNotifier</code> 的狀態都是它，直接用 <code>switch</code> 比對就好。</p>
+        <div class="example" data-id="state-async" data-kotlin="state-async" data-height="260" data-hint="切換「模擬連線失敗」會自動重新載入；按「重新整理」會再跑一次。"></div>
+        <ul>
+          <li><code>weatherProvider</code> 裡 <code>ref.watch(simulateErrorProvider)</code>，所以開關一變就會自動重新載入，不用另外寫「開關改變時呼叫 refresh」的代碼。</li>
+          <li><code>ref.invalidate(provider)</code> 會讓它重新執行，對應 ViewModel 的 <code>refresh()</code>。</li>
+          <li>重新載入時，舊的請求如果比較晚回來，它的結果會被自動丟掉。Kotlin 版要自己保存 <code>Job</code> 並 <code>cancel()</code>，才能避免舊結果蓋掉新結果。</li>
+          <li>重新載入期間，<code>AsyncValue</code> 會保留上一次的資料，並把 <code>isLoading</code> 設為 <code>true</code>。想顯示轉圈就先檢查 <code>isLoading</code>；想讓舊資料留在畫面上，就直接比對 <code>AsyncData</code>。</li>
+        </ul>
+        <aside class="warn">
+          <p><strong>Riverpod 3 預設會自動重試失敗的 provider。</strong>拋出 <code>Exception</code> 時，它會以 200 毫秒起跳、逐次加倍（最長 6.4 秒）的間隔重試，最多 10 次。重試期間狀態是「帶著錯誤的載入中」，<code>isLoading</code> 一直是 <code>true</code>，所以畫面會持續轉圈，重試用完才變成 <code>AsyncError</code>。對網路請求這通常是好事；但如果錯誤要馬上讓使用者看到，就像這裡一樣傳入 <code>retry: (retryCount, error) =&gt; null</code> 關掉它。拋出的是 <code>Error</code>（程式錯誤）時則不會重試。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="di">
+        <h2>依賴注入：Hilt 與 Riverpod</h2>
+        <span class="part-label">說明</span>
+        <p>Riverpod 的 provider 本身就是依賴注入。一個 provider 要用到另一個，就在裡面 <code>ref.watch</code> 它；要替換實作，就在 <code>ProviderScope</code> 用 <code>overrides</code>。</p>
+        <table class="compare">
+          <tr><th>Hilt</th><th>Riverpod</th></tr>
+          <tr><td><code>@Inject constructor(private val api: UserApi)</code></td><td><code>Provider((ref) =&gt; UserRepository(ref.watch(userApiProvider)))</code></td></tr>
+          <tr><td><code>@Module</code>、<code>@Binds</code> 介面綁定實作</td><td>介面型別的 provider，在 <code>ProviderScope(overrides: [...])</code> 提供實作</td></tr>
+          <tr><td>測試時用 <code>@TestInstallIn</code> 替換 module</td><td>測試時在 <code>ProviderScope</code> 用不同的 <code>overrides</code></td></tr>
+          <tr><td><code>@Singleton</code></td><td>一般的 provider（跟著 <code>ProviderScope</code> 一直存在）</td></tr>
+          <tr><td><code>@ViewModelScoped</code>、ViewModel 被清除</td><td><code>.autoDispose</code>：沒人監聽時自動釋放，用 <code>ref.onDispose</code> 清理資源</td></tr>
+        </table>
+        <p>待辦 App 就是這樣做的：<code>todoRepositoryProvider</code> 只宣告介面，真正的實作在 <code>main()</code> 決定。App 用 drift，測試和這個網站用記憶體版本。</p>
+        <div class="example" data-id="todo-repository" data-right="todo-repository.dart" data-left="todo-repository.kt" data-left-label="Kotlin" data-demo="none"></div>
+        <div class="example" data-id="todo-main" data-right="todo-main.dart" data-left="todo-main.kt" data-left-label="Kotlin（不用 Hilt 的手動注入）" data-demo="none"></div>
+      </section>
+
+      <section class="lesson" id="todo-notifier">
+        <h2>實作主線：待辦清單的 Notifier</h2>
+        <span class="part-label">說明</span>
+        <p>待辦 App 原本把清單放在畫面的 <code>State</code> 裡，現在改成三層：<code>TodoRepository</code> 負責存取資料、<code>TodoListNotifier</code> 負責畫面狀態與操作、<code>TodoListScreen</code> 只負責顯示，跟 Android 建議的架構一致。</p>
+        <ul>
+          <li><code>StreamNotifier</code> 的狀態直接來自 Repository 的 <code>Stream</code>：資料庫一變，畫面就跟著更新，對應 <code>repository.watchAll().stateIn(...)</code>。</li>
+          <li>新增、勾選、刪除只呼叫 Repository，不用手動更新清單，因為 Stream 會把新資料送回來。</li>
+          <li><code>remainingCountProvider</code> 是衍生狀態，標題列的「剩幾項」就讀它。</li>
+        </ul>
+        <div class="example" data-id="todo-notifier" data-kotlin="todo-notifier" data-height="440" data-hint="畫面的代碼在 todo_app/lib/screens/todo_list_screen.dart：它改成 ConsumerStatefulWidget，用 switch 比對 AsyncValue 來顯示清單、錯誤或載入中。"></div>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../todo.dart';
+import '../data/todo.dart';
 
 // [snippet:todo-tile]
 class TodoTile extends StatelessWidget {
@@ -8,18 +8,20 @@ class TodoTile extends StatelessWidget {
     super.key,
     required this.todo,
     required this.onToggle,
+    required this.onOpen,
     required this.onDelete,
   });
 
   final Todo todo;
   final VoidCallback onToggle;
+  final VoidCallback onOpen;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListTile(
-      onTap: onToggle,
+      onTap: onOpen,
       leading: Checkbox(value: todo.done, onChanged: (_) => onToggle()),
       title: Text(
         todo.title,

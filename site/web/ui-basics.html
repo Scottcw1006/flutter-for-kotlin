@@ -121,11 +121,11 @@
           <li><code>ListItem</code> 對應 <code>ListTile</code>：<code>leadingContent</code>、<code>headlineContent</code>、<code>trailingContent</code> 分別對應 <code>leading</code>、<code>title</code>、<code>trailing</code>。</li>
           <li>回呼型別 <code>() -&gt; Unit</code> 對應 <code>VoidCallback</code>，它其實就是 <code>void Function()</code> 的 typedef。</li>
           <li><code>TextStyle.copy()</code> 對應 <code>copyWith()</code>。<code>textTheme.bodyLarge</code> 在 Dart 裡是可為 null 的型別，所以要寫 <code>?.copyWith</code>。</li>
-          <li>點整列切換完成狀態：Compose 用 <code>Modifier.clickable</code>，<code>ListTile</code> 則直接提供 <code>onTap</code> 參數。</li>
+          <li>點整列開啟詳細頁：Compose 用 <code>Modifier.clickable</code>，<code>ListTile</code> 則直接提供 <code>onTap</code> 參數。詳細頁在第 4 章的導航加上。</li>
         </ul>
-        <div class="example" data-id="todo-tile" data-kotlin="todo-tile" data-height="440" data-hint="下方是完整的待辦清單畫面，每一列就是上面的 TodoTile。試試看：新增一項、點擊勾選、刪除。整個畫面的程式碼在 todo_app/lib/todo_list_screen.dart。"></div>
+        <div class="example" data-id="todo-tile" data-kotlin="todo-tile" data-height="440" data-hint="下方是完整的待辦 App，每一列就是上面的 TodoTile。試試看：新增一項、勾選、刪除，或點一列開啟編輯頁。整個畫面的程式碼在 todo_app/lib/screens/todo_list_screen.dart。"></div>
         <aside class="tip">
-          <p>清單畫面裡用到的 <code>[...list]</code>、集合裡的 <code>for</code> 等 Dart 語法會在第 2 章說明，<code>ValueKey</code> 在第 5 章說明。</p>
+          <p>這個畫面目前的版本已經套用了第 4 章的狀態管理（Riverpod）與導航（go_router），所以會看到 <code>ref.watch</code>、<code>context.push</code> 等寫法，那兩部分在第 4 章說明。<code>ValueKey</code> 在第 5 章說明。</p>
         </aside>
       </section>
 

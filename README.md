@@ -14,7 +14,7 @@ site/                         # 教學網站（Flutter Web 專案）
     ├── flutter_bootstrap.js  # 啟動 Flutter engine，替每個 [data-demo] 新增 view
     ├── css/site.css
     └── js/site.js            # 側欄目錄、範例區塊、代碼片段載入
-todo_app/                     # 實作主線：待辦清單 App（完整 Flutter 專案）
+todo_app/                     # 實作主線：待辦清單 App（Riverpod、drift、go_router）
 samples/android/              # Android 原生端範例（Gradle 專案）
 └── compose-reference/        # 網頁上「Compose（Kotlin）」欄位的代碼，CI 會編譯
 ```
@@ -66,6 +66,16 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
    語言範例可以用 `RunnerDemo`（`site/lib/demos/runner.dart`）當實際呈現：它會執行一個 Dart 函式，把 `print()` 的輸出顯示成 console。
 
 5. 新增章節頁面時，在 `site/web/js/site.js` 的 `CHAPTERS` 加上連結。
+
+## 代碼產生
+
+`todo_app` 與 `site` 都用到 freezed、json_serializable（`todo_app` 另外用 drift），產生的 `*.freezed.dart`、`*.g.dart` 會一併 commit，clone 下來就能直接建置。修改了這些類別之後要重新產生：
+
+```bash
+dart run build_runner build   # 或 dart run build_runner watch
+```
+
+`site/build.yaml` 限制代碼產生只處理 `lib/`，避免它去解析 `web/snippets/` 裡擷取出來的代碼片段。
 
 ## 中文字型子集
 

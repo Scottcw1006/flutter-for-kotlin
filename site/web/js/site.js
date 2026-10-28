@@ -28,9 +28,9 @@ const CHAPTERS = [
   {
     group: "4 · 邏輯與架構對照",
     items: [
-      { title: "ViewModel 與狀態管理" },
-      { title: "網路與資料儲存" },
-      { title: "導航" },
+      { href: "state-management.html", title: "ViewModel 與狀態管理" },
+      { href: "data.html", title: "網路與資料儲存" },
+      { href: "navigation.html", title: "導航" },
     ],
   },
   {

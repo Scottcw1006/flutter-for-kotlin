@@ -31,14 +31,14 @@ void main() {
         .where((f) => extensions.any(f.path.endsWith));
     for (final file in files) {
       final ext = extensions.firstWhere(file.path.endsWith);
-      String? id;
-      final buf = <String>[];
+      // snippet 可以巢狀：內層的行同時屬於外層，標記行本身不會出現在任何 snippet 裡
+      final open = <(String, List<String>)>[];
       for (final line in file.readAsLinesSync()) {
         final m = _start.firstMatch(line);
         if (m != null) {
-          id = m.group(1);
-          buf.clear();
-        } else if (id != null && _end.hasMatch(line)) {
+          open.add((m.group(1)!, <String>[]));
+        } else if (open.isNotEmpty && _end.hasMatch(line)) {
+          final (id, buf) = open.removeLast();
           final name = '$id$ext';
           if (written.containsKey(name)) {
             stderr.writeln('Duplicate snippet "$name" in ${file.path} and ${written[name]}');
@@ -46,13 +46,14 @@ void main() {
           }
           File('${out.path}/$name').writeAsStringSync('${_dedent(buf).trim()}\n');
           written[name] = file.path;
-          id = null;
-        } else if (id != null) {
-          buf.add(line);
+        } else {
+          for (final (_, buf) in open) {
+            buf.add(line);
+          }
         }
       }
-      if (id != null) {
-        stderr.writeln('Unclosed snippet "$id" in ${file.path}');
+      if (open.isNotEmpty) {
+        stderr.writeln('Unclosed snippet "${open.last.$1}" in ${file.path}');
         exit(1);
       }
     }

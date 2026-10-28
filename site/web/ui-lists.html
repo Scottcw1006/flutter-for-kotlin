@@ -83,8 +83,8 @@
       <section class="lesson" id="todo-list">
         <h2>實作主線：待辦清單改用 ListView.builder</h2>
         <span class="part-label">說明</span>
-        <p>上一頁的待辦 App 用的是 <code>ListView(children: [for ...])</code>，項目一多就會一次建立全部。現在把 <code>todo_app/lib/todo_list_screen.dart</code> 改成 <code>ListView.builder</code>，並保留以 <code>todo.id</code> 為值的 <code>ValueKey</code>：刪除或重新排序時，勾選動畫和輸入焦點這類狀態才會跟著正確的項目。</p>
-        <div class="example" data-id="todo-list" data-kotlin="todo-list" data-height="440" data-hint="右邊只截取清單的部分，完整的畫面在 todo_app/lib/todo_list_screen.dart。"></div>
+        <p>待辦清單用 <code>ListView.builder</code> 建立每一列，並以 <code>todo.id</code> 作為 <code>ValueKey</code>：刪除或重新排序時，勾選動畫這類狀態才會跟著正確的項目。代碼在 <code>todo_app/lib/screens/todo_list_screen.dart</code>。</p><p>右邊外層的 <code>switch (todos)</code> 是第 4 章狀態管理加上的：清單資料改由 Riverpod 提供，要依照「已載入、錯誤、載入中」三種狀態分別顯示。這一頁只要看 <code>AsyncData</code> 那一支裡的 <code>ListView.builder</code> 就好。</p>
+        <div class="example" data-id="todo-list" data-kotlin="todo-list" data-height="440" data-hint="右邊只截取清單的部分，完整的畫面在 todo_app/lib/screens/todo_list_screen.dart。"></div>
       </section>
 
       <nav class="pager"></nav>

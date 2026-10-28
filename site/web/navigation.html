@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>導航 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 4 章 · 邏輯與架構對照</p>
+      <h1>導航</h1>
+      <p class="lead">Flutter 有兩層導航 API：內建的 <code>Navigator</code> 是一個頁面堆疊，用 <code>push</code>、<code>pop</code> 直接操作；<strong>go_router</strong> 則是以網址定義路由，適合有 deep link、多個分頁的 App。前者像直接操作 <code>NavController</code> 的 back stack，後者像 Navigation Compose 的 <code>NavHost</code> 加上型別安全的路由。</p>
+
+      <section class="lesson" id="push">
+        <h2>Navigator：push、pop 與回傳結果</h2>
+        <span class="part-label">說明</span>
+        <p><code>Navigator.of(context).push()</code> 把新頁面放到堆疊最上面，<code>pop()</code> 回到上一頁。最方便的地方是：<strong><code>push</code> 回傳一個 Future</strong>，新頁面 <code>pop(結果)</code> 時，前一頁的 <code>await</code> 就會拿到這個結果。</p>
+        <div class="example" data-id="nav-push" data-kotlin="nav-push" data-height="260" data-hint="按「選擇顏色」，在下一頁選一個，回來時會顯示結果。左上角的返回鍵也可以直接回去。"></div>
+        <ul>
+          <li>Navigation Compose 沒有內建的回傳值機制，要透過上一個 back stack entry 的 <code>SavedStateHandle</code> 傳遞。Flutter 的寫法就像一般的函式呼叫。</li>
+          <li><code>await</code> 回來時這個畫面可能已經被關掉了，所以要先檢查 <code>mounted</code> 再 <code>setState</code>（第 2 章非同步提過）。</li>
+          <li><code>MaterialPageRoute</code> 會依平台使用對應的轉場動畫。</li>
+        </ul>
+        <aside class="tip">
+          <p>要攔截返回鍵（例如「還沒存檔，確定離開？」），Compose 用 <code>BackHandler</code>，Flutter 用 <code>PopScope(canPop: false, onPopInvokedWithResult: ...)</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="go-router">
+        <h2>實作主線：用 go_router 加上詳細頁</h2>
+        <span class="part-label">說明</span>
+        <p>待辦 App 現在有兩個畫面：清單和編輯頁。用 go_router 把它們定義成路由，點清單上的一筆就會開啟 <code>/todo/:id</code>。</p>
+        <table class="compare">
+          <tr><th>Navigation Compose</th><th>go_router</th></tr>
+          <tr><td><code>NavHost(startDestination = ...)</code></td><td><code>GoRouter(routes: [...])</code>，放進 <code>MaterialApp.router(routerConfig: ...)</code></td></tr>
+          <tr><td><code>@Serializable data class TodoDetailRoute(val id: Int)</code></td><td>路徑 <code>todo/:id</code>，用 <code>state.pathParameters['id']</code> 取值</td></tr>
+          <tr><td><code>navController.navigate(TodoDetailRoute(id))</code></td><td><code>context.push('/todo/$id')</code></td></tr>
+          <tr><td><code>navController.popBackStack()</code></td><td><code>context.pop()</code></td></tr>
+          <tr><td>巢狀的 navigation graph</td><td>巢狀的 <code>routes</code>：子路由會疊在父路由的頁面上</td></tr>
+        </table>
+        <div class="example" data-id="todo-router" data-kotlin="todo-router" data-height="440" data-hint="點任一筆待辦開啟編輯頁，修改標題後按「儲存」，會回到清單並看到新的標題。"></div>
+        <ul>
+          <li><code>context.push</code> 會把頁面疊上去，<code>context.go</code> 則是「跳到這個網址」：堆疊會依照路由的巢狀結構重建。從清單進詳細頁用 <code>push</code>，從通知直接打開某一頁就用 <code>go</code>。</li>
+          <li>因為路由就是網址，Android 的 deep link（App Links）設定好 intent filter 後，go_router 會直接解析，不用再自己對應。</li>
+          <li>路徑字串不是型別安全的。想要像 Navigation Compose 那樣用類別定義路由，可以用 <a href="https://pub.dev/packages/go_router_builder">go_router_builder</a> 產生代碼。</li>
+        </ul>
+        <p>編輯頁讀取同一個 <code>todoListProvider</code>，用 <code>select</code> 只挑出自己那一筆：</p>
+        <div class="example" data-id="todo-detail" data-demo="none"></div>
+      </section>
+
+      <section class="lesson" id="tabs">
+        <h2>底部分頁</h2>
+        <span class="part-label">說明</span>
+        <p>底部導航列 <code>NavigationBar</code> 兩邊同名。切換分頁時要保留每個分頁的狀態，Flutter 最簡單的做法是 <code>IndexedStack</code>：它同時保留所有子元件，只顯示其中一個。</p>
+        <div class="example" data-id="nav-tabs" data-kotlin="nav-tabs" data-height="300" data-hint="在「首頁」按幾次 +1，切到「搜尋」再切回來，次數還在。"></div>
+        <aside class="tip">
+          <p>實際的 App 裡，每個分頁通常有自己的頁面堆疊。go_router 用 <code>StatefulShellRoute.indexedStack</code> 處理，相當於 Navigation Compose 切換分頁時的 <code>saveState = true</code> 與 <code>restoreState = true</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="hero">
+        <h2>共享元素轉場：Hero</h2>
+        <span class="part-label">說明</span>
+        <p>第 3 章動畫頁提到的共享元素動畫，Flutter 叫做 <code>Hero</code>：前後兩個頁面各包一個 <code>Hero</code>，給相同的 <code>tag</code>，push 或 pop 時它就會在兩個位置之間飛過去，不需要其他設定。Compose 的對應是 <code>SharedTransitionLayout</code> 加 <code>Modifier.sharedElement()</code>。</p>
+        <div class="example" data-id="nav-hero" data-kotlin="nav-hero" data-height="280" data-hint="點一個圓圈開啟下一頁，按左上角返回時會飛回原位。"></div>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

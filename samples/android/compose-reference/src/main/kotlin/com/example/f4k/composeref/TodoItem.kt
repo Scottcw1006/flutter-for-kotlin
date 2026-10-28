@@ -14,14 +14,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextDecoration
+import kotlinx.serialization.Serializable
 
+// [snippet:todo-model]
+@Serializable
 data class Todo(val id: Int, val title: String, val done: Boolean = false)
+// [/snippet]
 
 // [snippet:todo-tile]
 @Composable
-fun TodoItem(todo: Todo, onToggle: () -> Unit, onDelete: () -> Unit) {
+fun TodoItem(todo: Todo, onToggle: () -> Unit, onOpen: () -> Unit, onDelete: () -> Unit) {
     ListItem(
-        modifier = Modifier.clickable(onClick = onToggle),
+        modifier = Modifier.clickable(onClick = onOpen),
         leadingContent = {
             Checkbox(checked = todo.done, onCheckedChange = { onToggle() })
         },
@@ -52,6 +56,7 @@ fun TodoItem(todo: Todo, onToggle: () -> Unit, onDelete: () -> Unit) {
 fun TodoList(
     todos: List<Todo>,
     onToggle: (Todo) -> Unit,
+    onOpen: (Todo) -> Unit,
     onDelete: (Todo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -60,6 +65,7 @@ fun TodoList(
             TodoItem(
                 todo = todo,
                 onToggle = { onToggle(todo) },
+                onOpen = { onOpen(todo) },
                 onDelete = { onDelete(todo) },
             )
         }

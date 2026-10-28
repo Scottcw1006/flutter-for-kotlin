@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>網路與資料儲存 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 4 章 · 邏輯與架構對照</p>
+      <h1>網路與資料儲存</h1>
+      <p class="lead">資料層的工具都有很接近的對應：kotlinx.serialization 對應 json_serializable 加 freezed，Retrofit 對應 dio，Room 對應 drift，DataStore 對應 shared_preferences。觀念幾乎可以直接搬過來，主要差在 Dart 的代碼產生要自己執行。</p>
+      <table class="compare">
+        <tr><th>Android</th><th>Flutter</th></tr>
+        <tr><td><code>@Serializable data class</code></td><td><code>@freezed</code> 類別，加上 json_serializable</td></tr>
+        <tr><td>Retrofit、OkHttp</td><td><a href="https://pub.dev/packages/dio">dio</a>（或官方較陽春的 <a href="https://pub.dev/packages/http">http</a>）</td></tr>
+        <tr><td>Room</td><td><a href="https://pub.dev/packages/drift">drift</a></td></tr>
+        <tr><td>DataStore Preferences、SharedPreferences</td><td><a href="https://pub.dev/packages/shared_preferences">shared_preferences</a></td></tr>
+        <tr><td>KSP、kapt（Gradle 建置時自動執行）</td><td><code>build_runner</code>（要自己執行）</td></tr>
+      </table>
+
+      <section class="lesson" id="json">
+        <h2>資料類別與 JSON</h2>
+        <span class="part-label">說明</span>
+        <p>第 2 章提過 Dart 沒有 data class。實務上用 <strong>freezed</strong> 產生 <code>copyWith</code>、<code>==</code>、<code>hashCode</code>、<code>toString</code>，再用 <strong>json_serializable</strong> 產生 <code>fromJson</code>、<code>toJson</code>：</p>
+        <ul>
+          <li>寫一個 <code>const factory</code> 建構子描述欄位，產生出來的代碼放在 <code>part</code> 宣告的 <code>*.freezed.dart</code> 和 <code>*.g.dart</code> 裡。</li>
+          <li>改了類別之後要執行 <code>dart run build_runner build</code>，或開著 <code>dart run build_runner watch</code> 讓它自動重新產生。這是跟 KSP 最大的差別：KSP 跟著 Gradle 建置自動跑。</li>
+          <li>欄位名稱跟 JSON 不同時，用 <code>@JsonKey(name: 'user_name')</code>，對應 <code>@SerialName</code>。</li>
+        </ul>
+        <div class="example" data-id="data-json" data-kotlin="data-json" data-height="260"></div>
+        <aside class="warn">
+          <p><strong>預設行為相反：</strong>json_serializable 會直接忽略 JSON 裡多出來的欄位（例如上面的 <code>phone</code>）；kotlinx.serialization 預設會丟例外，所以 Kotlin 版要設定 <code>ignoreUnknownKeys = true</code>。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="http">
+        <h2>HTTP 請求：dio 與 Retrofit</h2>
+        <span class="part-label">說明</span>
+        <p>dio 的角色相當於 OkHttp 加上一部分 Retrofit：<code>BaseOptions</code> 設定 base URL 與逾時，interceptor 處理登入 token 與 log。它沒有 Retrofit 那種「寫介面、自動產生實作」的機制，一般是自己包一個 API 類別，如右邊的 <code>UserApi</code>。想要 Retrofit 的寫法，可以用 <a href="https://pub.dev/packages/retrofit">retrofit</a> 這個 Dart 套件產生代碼。</p>
+        <div class="example" data-id="data-http" data-kotlin="data-http" data-height="400" data-hint="這個 demo 真的會從 jsonplaceholder.typicode.com 下載使用者清單。往下拉可以重新整理。"></div>
+        <ul>
+          <li><code>dioProvider</code> → <code>userApiProvider</code> → <code>usersProvider</code> 是一條依賴鏈，相當於 Hilt 裡 <code>OkHttpClient</code> 注入 <code>Retrofit</code>、再注入 Repository。測試時 override <code>userApiProvider</code> 就能換成假資料。</li>
+          <li>錯誤會以 <code>DioException</code> 拋出。Riverpod 3 會先自動重試幾次（期間仍顯示載入中），重試用完才變成 <code>AsyncError</code>，畫面再顯示「重試」按鈕。上一頁的非同步狀態有說明這個預設行為。</li>
+          <li><code>RefreshIndicator</code> 對應 <code>PullToRefreshBox</code>；<code>ref.refresh(provider.future)</code> 會重新執行並回傳新的 Future，下拉的轉圈會等它完成才收起來。</li>
+        </ul>
+        <aside class="tip">
+          <p>在網頁上執行時，請求會受瀏覽器的 CORS 限制，所以這裡選了允許跨網域的測試 API。Android 和 iOS 上沒有這個限制。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="drift">
+        <h2>本機資料庫：drift 與 Room</h2>
+        <span class="part-label">說明</span>
+        <p>drift 是 SQLite 加上型別安全的查詢，概念跟 Room 幾乎一一對應：</p>
+        <table class="compare">
+          <tr><th>Room</th><th>drift</th></tr>
+          <tr><td><code>@Entity data class</code></td><td>繼承 <code>Table</code> 的類別，每個欄位是一個 getter</td></tr>
+          <tr><td><code>@Dao</code> 裡寫 SQL 字串</td><td>Dart 的查詢 DSL（<code>select</code>、<code>update</code>、<code>where</code>），也可以把 SQL 寫在 <code>.drift</code> 檔</td></tr>
+          <tr><td><code>Flow&lt;List&lt;T&gt;&gt;</code> 回傳型別</td><td>查詢後呼叫 <code>.watch()</code> 得到 <code>Stream</code></td></tr>
+          <tr><td><code>@Database</code>、<code>version</code>、<code>Migration</code></td><td><code>@DriftDatabase</code>、<code>schemaVersion</code>、<code>MigrationStrategy</code></td></tr>
+          <tr><td>插入時傳 entity，id 用預設值</td><td>插入時傳 <code>Companion</code>，沒給的欄位就用預設值</td></tr>
+        </table>
+        <div class="example" data-id="todo-drift-db" data-right="todo-drift-db.dart" data-left="todo-drift-db.kt" data-left-label="Room（Kotlin）" data-right-label="drift（Dart）" data-demo="none"></div>
+        <p>Repository 把資料庫的列轉成 App 用的 <code>Todo</code>，並實作上一頁的 <code>TodoRepository</code> 介面：</p>
+        <div class="example" data-id="todo-drift-repo" data-kotlin="todo-drift-repo" data-height="440" data-hint="網頁裡沒有 SQLite，所以這裡的待辦 App 是透過 ProviderScope 換成記憶體版的 Repository（InMemoryTodoRepository）。畫面和 Notifier 完全不用改，這正是把資料存取抽成介面的好處。"></div>
+        <aside class="tip">
+          <p>drift 也支援網頁（透過 WebAssembly 版的 SQLite），但需要額外部署 worker 檔案，這個網站沒有使用。待辦 App 在 Android 和 iOS 上使用的就是真正的 drift 資料庫。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="prefs">
+        <h2>簡單設定值：shared_preferences 與 DataStore</h2>
+        <span class="part-label">說明</span>
+        <p>存少量的設定值（深色模式、上次選的分頁），DataStore Preferences 對應 shared_preferences。它在 Android 上底層就是 SharedPreferences，在 iOS 上是 <code>NSUserDefaults</code>，在網頁上是 <code>localStorage</code>。</p>
+        <div class="example" data-id="data-prefs" data-kotlin="data-prefs" data-height="160" data-hint="切換深色模式後重新整理網頁，設定會被保留下來。"></div>
+        <ul>
+          <li>建議使用新的 <code>SharedPreferencesAsync</code>（每次都非同步讀寫），或 <code>SharedPreferencesWithCache</code>。舊的 <code>SharedPreferences.getInstance()</code> 會把資料快取在記憶體裡，多個 isolate 同時讀寫時可能不一致。</li>
+          <li>DataStore 的 <code>data</code> 是一個 Flow，值改了會自動送出新值；shared_preferences 沒有變更通知，所以這裡用 <code>AsyncNotifier</code> 自己保存目前的值，寫入時先更新 <code>state</code> 再存檔。</li>
+        </ul>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

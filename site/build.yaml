@@ -1,0 +1,7 @@
+# 代碼產生只處理 lib/；web/snippets/ 是擷取出來的代碼片段，不是完整的 Dart 檔案
+targets:
+  $default:
+    sources:
+      - lib/**
+      - pubspec.yaml
+      - $package$

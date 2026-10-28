@@ -3,14 +3,21 @@ import 'dart:ui' show PointerDeviceKind;
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
-import 'package:todo_app/todo_list_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:todo_app/data/in_memory_todo_repository.dart';
+import 'package:todo_app/data/todo_repository.dart';
+import 'package:todo_app/router.dart';
 
 import 'demos/animation_demos.dart';
 import 'demos/dart_async_demos.dart';
 import 'demos/dart_syntax_demos.dart';
+import 'demos/data_demos.dart';
 import 'demos/layout_demos.dart';
 import 'demos/list_demos.dart';
+import 'demos/nav_demos.dart';
 import 'demos/runner.dart';
+import 'demos/state_demos.dart';
 import 'demos/ui_basics_demos.dart';
 
 // 網頁上 data-demo="<id>" 對應到的 Widget
@@ -30,7 +37,7 @@ final Map<String, WidgetBuilder> demos = {
   'ui-column-row': (_) => const ContactsDemo(),
   'ui-modifier': (_) => const ModifierDemo(),
   'ui-state': (_) => const Counter(),
-  'todo-tile': (_) => const TodoListScreen(),
+  'todo-tile': (_) => const TodoDemo(),
   'layout-constraints': (_) => const ConstraintsDemo(),
   'layout-flex': (_) => const FlexDemo(),
   'layout-stack': (_) => const StackDemo(),
@@ -38,11 +45,23 @@ final Map<String, WidgetBuilder> demos = {
   'lists-builder': (_) => const ContactListDemo(),
   'lists-grid': (_) => const GridDemo(),
   'lists-keys': (_) => const KeysDemo(),
-  'todo-list': (_) => const TodoListScreen(),
+  'todo-list': (_) => const TodoDemo(),
   'anim-implicit': (_) => const ImplicitDemo(),
   'anim-switcher': (_) => const SwitcherDemo(),
   'anim-size': (_) => const ExpandDemo(),
   'anim-explicit': (_) => const SpinnerDemo(),
+  'state-viewmodel': (_) => const CounterScreen(),
+  'state-derived': (_) => const CitySearch(),
+  'state-async': (_) => const WeatherCard(),
+  'todo-notifier': (_) => const TodoDemo(),
+  'data-json': (_) => const RunnerDemo(run: jsonDemo),
+  'data-http': (_) => const UserListDemo(),
+  'data-prefs': (_) => const SettingsDemo(),
+  'todo-drift-repo': (_) => const TodoDemo(),
+  'nav-push': (_) => const PushDemo(),
+  'nav-tabs': (_) => const TabsDemo(),
+  'nav-hero': (_) => const HeroDemo(),
+  'todo-router': (_) => const TodoDemo(),
 };
 
 /// flutter_bootstrap.js 呼叫 `app.addView({ hostElement, initialData })` 時傳入的資料
@@ -64,7 +83,8 @@ class MultiViewApp extends StatefulWidget {
   State<MultiViewApp> createState() => _MultiViewAppState();
 }
 
-class _MultiViewAppState extends State<MultiViewApp> with WidgetsBindingObserver {
+class _MultiViewAppState extends State<MultiViewApp>
+    with WidgetsBindingObserver {
   Map<int, Widget> _views = {};
 
   @override
@@ -87,7 +107,8 @@ class _MultiViewAppState extends State<MultiViewApp> with WidgetsBindingObserver
   void _updateViews() {
     final views = <int, Widget>{};
     for (final view in WidgetsBinding.instance.platformDispatcher.views) {
-      views[view.viewId] = _views[view.viewId] ??
+      views[view.viewId] =
+          _views[view.viewId] ??
           View(
             view: view,
             child: DemoHost(data: _dataOf(view.viewId)),
@@ -96,10 +117,12 @@ class _MultiViewAppState extends State<MultiViewApp> with WidgetsBindingObserver
     setState(() => _views = views);
   }
 
-  DemoViewData _dataOf(int viewId) => ui_web.views.getInitialData(viewId) as DemoViewData;
+  DemoViewData _dataOf(int viewId) =>
+      ui_web.views.getInitialData(viewId) as DemoViewData;
 
   @override
-  Widget build(BuildContext context) => ViewCollection(views: _views.values.toList());
+  Widget build(BuildContext context) =>
+      ViewCollection(views: _views.values.toList());
 }
 
 class DemoHost extends StatelessWidget {
@@ -110,21 +133,54 @@ class DemoHost extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final builder = demos[data.demoId];
-    return MaterialApp(
-      title: data.pageTitle,
+    // 每個 demo 有自己的 ProviderScope；待辦 App 的 Repository 換成記憶體版本
+    return ProviderScope(
+      overrides: [
+        todoRepositoryProvider.overrideWithValue(InMemoryTodoRepository()),
+      ],
+      child: MaterialApp(
+        title: data.pageTitle,
+        debugShowCheckedModeBanner: false,
+        // Flutter Web 預設只允許觸控拖曳捲動；讓滑鼠和觸控板也能拖曳列表
+        scrollBehavior: const MaterialScrollBehavior().copyWith(
+          dragDevices: PointerDeviceKind.values.toSet(),
+        ),
+        // 中文字明確交給打包好的子集字型，避開 Flutter Web 自動下載備用字型時的量測誤差
+        theme: ThemeData(
+          colorSchemeSeed: Colors.teal,
+          fontFamilyFallback: const ['NotoSansTCSubset'],
+        ),
+        home: builder != null
+            ? Scaffold(body: Builder(builder: builder))
+            : Center(child: Text('Unknown demo: ${data.demoId}')),
+      ),
+    );
+  }
+}
+
+/// 完整的待辦 App（含 go_router 導航），跑在 demo 的 MaterialApp 裡
+class TodoDemo extends StatefulWidget {
+  const TodoDemo({super.key});
+
+  @override
+  State<TodoDemo> createState() => _TodoDemoState();
+}
+
+class _TodoDemoState extends State<TodoDemo> {
+  final GoRouter _router = createRouter();
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      // Flutter Web 預設只允許觸控拖曳捲動；讓滑鼠和觸控板也能拖曳列表
-      scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: PointerDeviceKind.values.toSet(),
-      ),
-      // 中文字明確交給打包好的子集字型，避開 Flutter Web 自動下載備用字型時的量測誤差
-      theme: ThemeData(
-        colorSchemeSeed: Colors.teal,
-        fontFamilyFallback: const ['NotoSansTCSubset'],
-      ),
-      home: builder != null
-          ? Scaffold(body: Builder(builder: builder))
-          : Center(child: Text('Unknown demo: ${data.demoId}')),
+      theme: Theme.of(context),
+      routerConfig: _router,
     );
   }
 }
