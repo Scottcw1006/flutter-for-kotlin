@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>文字輸入與表單 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>文字輸入與表單</h1>
+      <p class="lead">文字輸入是 Compose 與 Flutter 寫法差最多的元件之一：Compose 的文字存在你自己的 state 裡，Flutter 的文字則存在一個 <strong>controller</strong> 物件裡。這一頁從這個差別開始，再看表單驗證、焦點與鍵盤，最後修正待辦 App 編輯頁的一個初始值問題。</p>
+
+      <section class="lesson" id="controller">
+        <h2>誰持有文字：state 與 controller</h2>
+        <span class="part-label">說明</span>
+        <p>Compose 的 <code>TextField(value, onValueChange)</code> 是典型的 state hoisting：文字存在外面，TextField 只負責顯示，使用者輸入時回報新的值。Flutter 的 <code>TextField</code> 則是把文字交給 <code>TextEditingController</code> 管理，TextField 直接讀寫它：</p>
+        <div class="example" data-id="form-controller" data-kotlin="form-controller" data-height="240" data-hint="輸入文字時，下方的字數會即時更新。按「轉大寫」「清除」是從外部修改 controller 的內容。"></div>
+        <table class="compare">
+          <tr><th>做什麼</th><th>Compose</th><th>Flutter</th></tr>
+          <tr><td>文字存在哪</td><td>自己的 <code>mutableStateOf("")</code></td><td><code>TextEditingController</code></td></tr>
+          <tr><td>讀取目前的文字</td><td>讀 state</td><td><code>controller.text</code></td></tr>
+          <tr><td>從程式修改文字</td><td>改 state</td><td><code>controller.text = …</code>、<code>controller.clear()</code></td></tr>
+          <tr><td>文字改變時更新其他 UI</td><td>state 改變會自動重組</td><td>用 <code>ListenableBuilder</code> 監聽 controller，或用 <code>onChanged</code> 搭配 <code>setState</code></td></tr>
+          <tr><td>釋放</td><td>不需要</td><td>在 <code>dispose()</code> 呼叫 <code>controller.dispose()</code></td></tr>
+        </table>
+        <p>所以 controller 一定要放在 <code>State</code> 的欄位裡，不能在 <code>build()</code> 裡建立：每次重建都會產生一個新的 controller，使用者輸入的內容就消失了。</p>
+        <aside class="tip">
+          <p>只需要在送出時拿到文字的簡單情況，也可以不用 controller，改用 <code>onChanged</code> 把值存起來。另外，Compose 新版的 <code>TextFieldState</code>（<code>rememberTextFieldState()</code>）其實就是 controller 的寫法，用過它的話，Flutter 的 controller 會很好理解。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="validate">
+        <h2>表單驗證：Form 與 TextFormField</h2>
+        <span class="part-label">說明</span>
+        <p>Compose 沒有內建的表單元件，驗證規則與錯誤顯示要自己組合。Flutter 提供 <code>Form</code>：每個欄位改用 <code>TextFormField</code>，用 <code>validator</code> 回傳錯誤訊息（回傳 <code>null</code> 代表通過），送出時呼叫 <code>FormState.validate()</code> 一次檢查全部欄位：</p>
+        <div class="example" data-id="form-validate" data-kotlin="form-validate" data-height="320" data-hint="直接按「送出」看錯誤訊息，再修改欄位，錯誤會即時消失。在「名稱」按鍵盤的 Enter 會跳到 Email。"></div>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th></tr>
+          <tr><td><code>isError</code> ＋ <code>supportingText</code></td><td><code>validator</code> 回傳錯誤字串，<code>TextFormField</code> 自動顯示</td></tr>
+          <tr><td>自己決定何時驗證</td><td><code>FormState.validate()</code>；<code>autovalidateMode</code> 決定輸入時是否自動驗證</td></tr>
+          <tr><td><code>KeyboardOptions(keyboardType = KeyboardType.Email)</code></td><td><code>keyboardType: TextInputType.emailAddress</code></td></tr>
+          <tr><td><code>KeyboardOptions(imeAction = ImeAction.Next)</code></td><td><code>textInputAction: TextInputAction.next</code></td></tr>
+          <tr><td><code>KeyboardActions(onNext = { … })</code></td><td><code>onFieldSubmitted: (_) { … }</code></td></tr>
+          <tr><td><code>FocusRequester</code></td><td><code>FocusNode</code>（要在 <code>dispose()</code> 釋放）</td></tr>
+          <tr><td><code>LocalFocusManager.current.clearFocus()</code></td><td><code>FocusScope.of(context).unfocus()</code></td></tr>
+        </table>
+        <p>範例用 <code>GlobalKey&lt;FormState&gt;</code> 從外部取得 <code>Form</code> 的狀態，這就是第 5 章 Key 表格裡提到的 <code>GlobalKey</code> 最常見的用法。</p>
+      </section>
+
+      <section class="lesson" id="keyboard">
+        <h2>鍵盤遮擋</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 範本的 <code>AndroidManifest.xml</code> 已經設定 <code>windowSoftInputMode="adjustResize"</code>，而 <code>Scaffold</code> 預設 <code>resizeToAvoidBottomInset: true</code>：鍵盤跳出來時，<code>body</code> 的可用高度會變小，作用就像 Compose 的 <code>Modifier.imePadding()</code>。</p>
+        <ul>
+          <li><strong>表單要能捲動</strong>：高度變小之後，固定高度的 <code>Column</code> 會放不下，出現第 3 章提過的 overflow 斜紋。所以表單通常用 <code>ListView</code> 或 <code>SingleChildScrollView</code> 包起來，範例的 <code>SignUpForm</code> 就是用 <code>ListView</code>。</li>
+          <li><strong>點空白處收起鍵盤</strong>：Flutter 不會自動處理。常見做法是在 <code>TextField</code> 的 <code>onTapOutside</code> 呼叫 <code>FocusScope.of(context).unfocus()</code>。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="initial-value">
+        <h2>controller 的初始值從哪裡來</h2>
+        <span class="part-label">說明</span>
+        <p>編輯畫面常常要先填入既有的資料，例如待辦的標題。controller 的初始值只會在建立時用一次，之後就由使用者的輸入決定。所以有兩個原則：</p>
+        <ul>
+          <li><strong>不要在 <code>build()</code> 裡把資料塞回 controller</strong>：每次重建都會蓋掉使用者正在輸入的內容。</li>
+          <li><strong>等資料準備好才建立 controller</strong>：資料還在載入時就建立，初始值會是空的，之後也不會自動補上。</li>
+        </ul>
+        <p>Compose 的對應寫法是 <code>remember(todo.id) { mutableStateOf(todo.title) }</code>，同樣放在資料載入完成之後才組合的 composable 裡。第 4 章替待辦 App 加上<a href="navigation.html#go-router">編輯頁</a>時，就會用這個方式處理。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

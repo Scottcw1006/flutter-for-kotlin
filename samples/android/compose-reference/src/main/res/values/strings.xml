@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cart_title">Shopping cart</string>
+    <string name="cart_empty">Your cart is empty</string>
+    <string name="greeting">Hello, %1$s!</string>
+    <plurals name="items_in_cart">
+        <item quantity="one">%d item in your cart</item>
+        <item quantity="other">%d items in your cart</item>
+    </plurals>
+</resources>

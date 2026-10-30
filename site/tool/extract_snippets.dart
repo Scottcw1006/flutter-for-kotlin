@@ -58,6 +58,17 @@ void main() {
       }
     }
   }
+  // .arb 是 JSON，不能加註解標記，所以整個檔案原樣輸出（例如 app_zh.arb）
+  for (final file in Directory('lib').listSync(recursive: true).whereType<File>()) {
+    if (!file.path.endsWith('.arb')) continue;
+    final name = file.uri.pathSegments.last;
+    if (written.containsKey(name)) {
+      stderr.writeln('Duplicate snippet "$name" in ${file.path} and ${written[name]}');
+      exit(1);
+    }
+    file.copySync('${out.path}/$name');
+    written[name] = file.path;
+  }
   stdout.writeln('Extracted ${written.length} snippets to ${out.path}');
 }
 

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>測試與除錯 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 4 章 · 邏輯與架構對照</p>
+      <h1>測試與除錯</h1>
+      <p class="lead">前面幾頁一直提到「測試時可以 override 掉 Repository」，這一頁就實際替待辦 App 寫測試。Flutter 的測試有一個讓 Android 開發者羨慕的地方：UI 測試不需要模擬器，幾秒鐘就跑完。後半頁說明除錯工具，以及怎麼讀懂 Flutter 的錯誤訊息。</p>
+
+      <section class="lesson" id="kinds">
+        <h2>測試種類對照</h2>
+        <span class="part-label">說明</span>
+        <table class="compare">
+          <tr><th>Android</th><th>Flutter</th><th>需要裝置嗎</th></tr>
+          <tr><td>JUnit 單元測試（<code>src/test</code>）</td><td>單元測試：<code>test()</code></td><td>都不需要</td></tr>
+          <tr><td>Compose UI 測試（<code>src/androidTest</code>）</td><td><strong>Widget 測試</strong>：<code>testWidgets()</code></td><td>Compose 需要裝置或 Robolectric；Flutter <strong>不需要</strong>，在電腦上直接畫出 widget 樹</td></tr>
+          <tr><td>Espresso、UI Automator 的端對端測試</td><td>整合測試：<code>integration_test</code> 套件</td><td>都需要</td></tr>
+        </table>
+        <p>單元測試與 widget 測試都放在 <code>test/</code>，用 <code>flutter test</code> 執行。待辦 App 的 5 個測試，扣掉第一次編譯的時間，在筆電上不到一秒就全部跑完；同樣的 Compose UI 測試則要先把 test APK 安裝到模擬器上。</p>
+      </section>
+
+      <section class="lesson" id="notifier">
+        <h2>Notifier 的單元測試</h2>
+        <span class="part-label">說明</span>
+        <p>測試 ViewModel 時，要把 <code>Dispatchers.Main</code> 換成測試用的 dispatcher，再用 Turbine 收集 <code>StateFlow</code>。測試 Notifier 則是建立一個 <code>ProviderContainer</code>，用 <code>overrides</code> 換掉 Repository，完全不需要 widget：</p>
+        <div class="example" data-id="test-notifier" data-left="test-notifier.kt" data-left-label="ViewModel 測試（JUnit）" data-right-label="Notifier 測試（flutter_test）" data-demo="none"></div>
+        <table class="compare">
+          <tr><th>Kotlin</th><th>Riverpod</th></tr>
+          <tr><td>建構子注入假的 Repository</td><td><code>ProviderContainer.test(overrides: [...])</code>，測試結束時自動釋放</td></tr>
+          <tr><td><code>Dispatchers.setMain(...)</code></td><td>不需要，Dart 只有一條執行緒</td></tr>
+          <tr><td>Turbine 的 <code>test { }</code> 開始收集</td><td><code>container.listen(provider, ...)</code></td></tr>
+          <tr><td><code>awaitItem()</code></td><td><code>await container.read(provider.future)</code></td></tr>
+          <tr><td>測試 dispatcher 推進</td><td><code>await container.pump()</code></td></tr>
+        </table>
+        <aside class="warn">
+          <p><strong>先 <code>listen</code> 再讀取。</strong>Riverpod 3 會暫停沒有人監聽的 provider，只用 <code>container.read(todoListProvider.future)</code> 的話，這個 Future 會一直等不到結果，測試在 30 秒後逾時。這和 <code>stateIn(WhileSubscribed)</code> 的 <code>StateFlow</code> 沒有收集者就不會啟動，是同樣的道理。</p>
+        </aside>
+        <aside class="tip">
+          <p>這個測試第一次執行時就失敗了，抓到一個真的 bug：網站 demo 與測試用的 <code>InMemoryTodoRepository</code>，原本先送出目前的清單、之後才開始監聽變更，兩者之間的修改會被漏掉。正式 App 用的 drift 沒有這個問題，所以畫面上從來沒出錯過。修正後的 <code>watchAll()</code> 改成先監聽、再送出。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="widget">
+        <h2>Widget 測試</h2>
+        <span class="part-label">說明</span>
+        <p>Widget 測試用 <code>pumpWidget</code> 放入要測的 widget，再用 <code>find</code> 找元件、<code>tester</code> 操作，概念與 Compose UI 測試幾乎一一對應：</p>
+        <div class="example" data-id="test-widget" data-left="test-widget.kt" data-left-label="Compose UI 測試" data-right-label="Widget 測試" data-demo="none"></div>
+        <table class="compare">
+          <tr><th>Compose UI 測試</th><th>Flutter widget 測試</th></tr>
+          <tr><td><code>composeTestRule.setContent { }</code></td><td><code>await tester.pumpWidget(...)</code></td></tr>
+          <tr><td><code>onNodeWithText("…")</code></td><td><code>find.text('…')</code></td></tr>
+          <tr><td><code>onNodeWithContentDescription("…")</code></td><td><code>find.byTooltip('…')</code>、<code>find.bySemanticsLabel('…')</code></td></tr>
+          <tr><td><code>onNodeWithTag("…")</code></td><td><code>find.byKey(const ValueKey('…'))</code></td></tr>
+          <tr><td><code>performClick()</code>、<code>performTextInput()</code></td><td><code>tester.tap(...)</code>、<code>tester.enterText(...)</code></td></tr>
+          <tr><td><code>assertExists()</code>、<code>assertDoesNotExist()</code></td><td><code>expect(finder, findsOneWidget)</code>、<code>findsNothing</code></td></tr>
+          <tr><td>自動等待 UI 閒置</td><td>要自己呼叫 <code>await tester.pump()</code> 或 <code>pumpAndSettle()</code></td></tr>
+          <tr><td><code>mainClock.advanceTimeBy(…)</code></td><td><code>await tester.pump(duration)</code></td></tr>
+        </table>
+        <p>最大的差別是<strong>時間由你推進</strong>：Compose 的測試規則會自動等待重組與動畫結束，Flutter 則是在你呼叫 <code>pump()</code> 時才畫下一幀。<code>pumpAndSettle()</code> 會一直推進到沒有動畫為止；如果畫面上有無限循環的動畫（例如轉圈的 <code>CircularProgressIndicator</code>），它會逾時，這時改用 <code>pump()</code>。</p>
+      </section>
+
+      <section class="lesson" id="deeplink">
+        <h2>用測試守住修正：直接開啟編輯頁</h2>
+        <span class="part-label">說明</span>
+        <p>第 4 章的<a href="navigation.html#go-router">編輯頁</a>修正過「透過 deep link 開啟時，資料還在載入」的情況。這種情況手動很難重現，正好用測試固定下來：自己寫一個由測試決定何時送出資料的 Repository，先確認顯示的是轉圈，送出資料後再確認標題欄填入了正確的標題：</p>
+        <div class="example" data-id="test-deeplink" data-right="test-deeplink.dart" data-right-label="todo_app/test/todo_detail_screen_test.dart" data-demo="none"></div>
+        <p>把編輯頁換回修正前的版本，這個測試就會失敗（找不到轉圈），代表它確實守住了這個問題。<code>noSuchMethod</code> 那一段讓假的 Repository 不必實作用不到的方法，作用類似 MockK 的 <code>relaxed</code> mock；正式專案也可以改用 <a href="https://pub.dev/packages/mocktail">mocktail</a>。</p>
+      </section>
+
+      <section class="lesson" id="integration">
+        <h2>整合測試</h2>
+        <span class="part-label">說明</span>
+        <p>要在真的裝置上、用真的 drift 資料庫跑完整流程，用 Flutter SDK 內附的 <code>integration_test</code> 套件。測試程式碼的寫法和 widget 測試完全相同（同樣是 <code>testWidgets</code> 與 <code>find</code>），只是放在 <code>integration_test/</code> 資料夾，用 <code>flutter test integration_test</code> 在連接的裝置上執行。它也能在 Firebase Test Lab 上跑，地位相當於 Espresso 測試。</p>
+      </section>
+
+      <section class="lesson" id="devtools">
+        <h2>除錯工具</h2>
+        <span class="part-label">說明</span>
+        <p>斷點、逐步執行、查看變數，在 Android Studio 或 VS Code 裡的操作跟除錯 Kotlin 一樣。其他工具集中在 <strong>Flutter DevTools</strong>，從 IDE 的 Flutter 面板或 <code>flutter run</code> 印出的網址開啟：</p>
+        <table class="compare">
+          <tr><th>Android Studio</th><th>Flutter DevTools</th></tr>
+          <tr><td>Layout Inspector</td><td><strong>Widget Inspector</strong>：點畫面上的元件，查看 widget 樹、constraints 與尺寸。版面配置不如預期時，先看它收到的 constraints（第 3 章）</td></tr>
+          <tr><td>Recomposition counts</td><td>Performance 頁的 rebuild 統計，以及 <code>debugPrintRebuildDirtyWidgets</code></td></tr>
+          <tr><td>CPU / Memory Profiler</td><td>CPU Profiler、Memory 頁（要用 profile mode）</td></tr>
+          <tr><td>Network Inspector</td><td>Network 頁，可以看到 dio 等套件發出的請求</td></tr>
+          <tr><td>Logcat</td><td>Logging 頁；程式裡用 <code>debugPrint()</code> 或 <code>dart:developer</code> 的 <code>log()</code></td></tr>
+        </table>
+      </section>
+
+      <section class="lesson" id="errors">
+        <h2>讀懂 Flutter 的錯誤</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 的 <code>build()</code> 或排版發生錯誤時，App 通常<strong>不會崩潰</strong>，而是把出錯的那一塊換成錯誤畫面，其他部分照常運作。這跟 Android 一拋例外就閃退很不一樣，所以也要注意 release 版不會讓錯誤「看起來很明顯」：</p>
+        <table class="compare">
+          <tr><th>看到的畫面</th><th>代表什麼</th></tr>
+          <tr><td>紅底黃字的錯誤畫面</td><td>debug 版 <code>build()</code> 拋出例外。release 版會換成一塊灰色區域，使用者只會覺得畫面怪怪的</td></tr>
+          <tr><td>邊緣的黃黑斜紋</td><td>overflow：子元件超出了 constraints 給的空間（第 3 章），console 會印出「A RenderFlex overflowed by N pixels」。只在 debug 版顯示</td></tr>
+          <tr><td>Vertical viewport was given unbounded height</td><td>在 <code>Column</code> 裡直接放 <code>ListView</code>（第 3 章）</td></tr>
+          <tr><td>setState() called after dispose()</td><td>非同步工作結束時，畫面已經關掉了。在 <code>await</code> 之後先檢查 <code>mounted</code>（第 2 章）</td></tr>
+          <tr><td>Null check operator used on a null value</td><td>對 <code>null</code> 用了 <code>!</code>，相當於 Kotlin 的 <code>!!</code> 拋出 NPE</td></tr>
+          <tr><td>No ProviderScope found</td><td>忘了在 <code>runApp</code> 最外層包 <code>ProviderScope</code>（第 4 章）</td></tr>
+        </table>
+        <p>錯誤訊息的第一段通常就寫了原因和解法，最後還會列出「The relevant error-causing widget was」，點擊就能跳到出錯的那一行程式碼。</p>
+        <aside class="tip">
+          <p><strong>把錯誤送到 Crashlytics 等服務</strong>：因為很多錯誤不會讓 App 閃退，要同時攔截兩個地方：<code>FlutterError.onError</code>（框架內的錯誤，例如 <code>build()</code> 失敗）與 <code>PlatformDispatcher.instance.onError</code>（其他未處理的非同步例外）。<code>firebase_crashlytics</code> 的設定說明就是設定這兩個。release 版用了 <code>--obfuscate</code> 的話，記得上傳符號檔（第 8 章）。</p>
+        </aside>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

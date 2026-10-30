@@ -19,10 +19,13 @@ const CHAPTERS = [
   {
     group: "3 · UI 對照",
     items: [
+      { href: "app-skeleton.html", title: "App 骨架與主題" },
       { href: "ui-basics.html", title: "從 Composable 到 Widget" },
       { href: "ui-layout.html", title: "版面配置與 constraints" },
       { href: "ui-lists.html", title: "列表" },
+      { href: "forms.html", title: "文字輸入與表單" },
       { href: "ui-animation.html", title: "動畫" },
+      { href: "assets-i18n.html", title: "圖片、資源與多語系" },
     ],
   },
   {
@@ -31,6 +34,7 @@ const CHAPTERS = [
       { href: "state-management.html", title: "ViewModel 與狀態管理" },
       { href: "data.html", title: "網路與資料儲存" },
       { href: "navigation.html", title: "導航" },
+      { href: "testing.html", title: "測試與除錯" },
     ],
   },
   {
@@ -88,7 +92,7 @@ function renderPager() {
     (next ? `<a class="next" href="${next.href}"><small>下一章</small>${next.title}</a>` : "<span></span>");
 }
 
-const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", yml: "yaml", swift: "swift", xml: "xml" };
+const LANGS = { dart: "dart", kt: "kotlin", kts: "kotlin", yaml: "yaml", yml: "yaml", swift: "swift", xml: "xml", arb: "json" };
 
 function codePanel(label, labelClass, file) {
   const lang = LANGS[file.split(".").pop()] || "plaintext";

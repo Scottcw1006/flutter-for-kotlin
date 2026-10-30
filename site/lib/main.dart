@@ -10,20 +10,28 @@ import 'package:todo_app/data/todo_repository.dart';
 import 'package:todo_app/router.dart';
 
 import 'demos/animation_demos.dart';
+import 'demos/asset_demos.dart';
 import 'demos/dart_async_demos.dart';
 import 'demos/dart_syntax_demos.dart';
+import 'demos/form_demos.dart';
 import 'demos/data_demos.dart';
 import 'demos/key_demos.dart';
 import 'demos/layout_demos.dart';
 import 'demos/list_demos.dart';
 import 'demos/nav_demos.dart';
 import 'demos/runner.dart';
+import 'demos/skeleton_demos.dart';
 import 'demos/state_demos.dart';
 import 'demos/tree_demos.dart';
 import 'demos/ui_basics_demos.dart';
 
 // 網頁上 data-demo="<id>" 對應到的 Widget
 final Map<String, WidgetBuilder> demos = {
+  'app-skeleton': (_) => const SkeletonApp(),
+  'form-controller': (_) => const TextInputDemo(),
+  'form-validate': (_) => const SignUpForm(),
+  'images': (_) => const ImagesDemo(),
+  'i18n': (_) => const I18nDemo(),
   'syntax-variables': (_) => const RunnerDemo(run: variables),
   'syntax-functions': (_) => const RunnerDemo(run: functions),
   'syntax-null': (_) => const RunnerDemo(run: nullSafety),

@@ -104,6 +104,19 @@ JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" ./gradle
 
 5. 新增章節頁面時，在 `site/web/js/site.js` 的 `CHAPTERS` 加上連結。
 
+## 測試
+
+```bash
+cd todo_app && flutter test          # Notifier 單元測試與 widget 測試
+cd samples/android && ./gradlew :compose-reference:testDebugUnitTest   # 對照用的 ViewModel 測試
+```
+
+Compose UI 測試（`compose-reference/src/androidTest`）需要模擬器：`./gradlew :compose-reference:connectedDebugAndroidTest`；CI 只編譯它。
+
+## 多語系 demo
+
+`site/lib/l10n/*.arb` 由 `flutter gen-l10n` 產生 `app_localizations*.dart`（`pubspec.yaml` 設了 `generate: true`，建置時會自動重新產生）。產生的檔案一併 commit。
+
 ## 程式碼產生
 
 `todo_app` 與 `site` 都用到 freezed、json_serializable（`todo_app` 另外用 drift），產生的 `*.freezed.dart`、`*.g.dart` 會一併 commit，clone 下來就能直接建置。修改了這些類別之後要重新產生：

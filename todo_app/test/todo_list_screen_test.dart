@@ -5,6 +5,8 @@ import 'package:todo_app/data/in_memory_todo_repository.dart';
 import 'package:todo_app/data/todo_repository.dart';
 import 'package:todo_app/main.dart';
 
+// [snippet:test-widget]
+// 用記憶體版的 Repository 取代 drift，相當於 Hilt 測試裡換掉 @Module
 Widget app() => ProviderScope(
       overrides: [todoRepositoryProvider.overrideWithValue(InMemoryTodoRepository())],
       child: const TodoApp(),
@@ -30,6 +32,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('寫測試'), findsNothing);
   });
+// [/snippet]
 
   testWidgets('進入詳細頁修改標題', (tester) async {
     await tester.pumpWidget(app());

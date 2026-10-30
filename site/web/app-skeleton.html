@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App 骨架與主題 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>App 骨架與主題</h1>
+      <p class="lead">開始寫畫面之前，先看一個 Flutter App 最外層長什麼樣子：<code>flutter create</code> 產生了哪些檔案、<code>runApp</code> 和 <code>MaterialApp</code> 扮演什麼角色、<code>Scaffold</code> 的各個欄位對應 Compose 的哪裡，以及主題與深色模式怎麼設定。之後每一頁的範例，都是放在這個骨架裡面。</p>
+
+      <section class="lesson" id="create">
+        <h2>flutter create 產生了什麼</h2>
+        <span class="part-label">說明</span>
+        <p>執行 <code>flutter create --org com.example my_app</code> 會產生一個可以直接執行的專案。平常會碰到的檔案：</p>
+        <table class="compare">
+          <tr><th>檔案</th><th>Android 對應</th><th>用途</th></tr>
+          <tr><td><code>lib/main.dart</code></td><td><code>MainActivity.kt</code></td><td>Dart 程式的進入點 <code>main()</code>，所有 Dart 程式碼都放在 <code>lib/</code> 底下</td></tr>
+          <tr><td><code>pubspec.yaml</code></td><td><code>build.gradle.kts</code> 的 <code>dependencies</code></td><td>套件依賴、版本號、字型與圖片等資源宣告</td></tr>
+          <tr><td><code>pubspec.lock</code></td><td>Gradle 的 dependency lock</td><td>實際解析出的套件版本。App 專案要 commit</td></tr>
+          <tr><td><code>analysis_options.yaml</code></td><td>Lint／detekt 設定</td><td>Dart 靜態分析與 lint 規則，<code>flutter analyze</code> 會讀取</td></tr>
+          <tr><td><code>test/</code></td><td><code>src/test/</code></td><td>單元測試與 widget 測試（第 4 章「測試與除錯」）</td></tr>
+          <tr><td><code>android/</code>、<code>ios/</code></td><td>整個 Android 專案</td><td>各平台的原生專案。改 App 名稱、權限、簽章時才需要動（第 1、6、8 章）</td></tr>
+          <tr><td><code>build/</code>、<code>.dart_tool/</code></td><td><code>build/</code>、<code>.gradle/</code></td><td>建置產物與快取，不進版本控制</td></tr>
+        </table>
+        <p>加入套件用 <code>flutter pub add 套件名稱</code>，它會改好 <code>pubspec.yaml</code> 並下載，相當於在 Gradle 加一行 <code>implementation</code> 再 sync。</p>
+      </section>
+
+      <section class="lesson" id="skeleton">
+        <h2>從 setContent 到 runApp</h2>
+        <span class="part-label">說明</span>
+        <p>Compose 在 Activity 裡呼叫 <code>setContent</code>，最外層通常包一個 <code>MaterialTheme</code>，再放 <code>Scaffold</code>。Flutter 的結構幾乎一樣，只是入口變成 <code>main()</code> 裡的 <code>runApp</code>：</p>
+        <div class="example" data-id="app-skeleton" data-kotlin="app-skeleton" data-height="420" data-hint="按右上角切換深色模式、點選不同的種子色，所有元件的顏色都會跟著主題改變。按右下角的 + 會顯示 SnackBar。"></div>
+        <table class="compare">
+          <tr><th>Compose</th><th>Flutter</th><th>說明</th></tr>
+          <tr><td><code>setContent { }</code></td><td><code>runApp(widget)</code></td><td>把最外層的 UI 交給框架</td></tr>
+          <tr><td><code>MaterialTheme</code></td><td><code>MaterialApp</code> 的 <code>theme</code></td><td><code>MaterialApp</code> 不只提供主題，還包含導航（<code>Navigator</code>）、語系、App 標題等設定，相當於 <code>MaterialTheme</code> 加上 <code>NavHost</code> 的外框。用 go_router 時改成 <code>MaterialApp.router</code>（第 4 章）</td></tr>
+          <tr><td><code>isSystemInDarkTheme()</code></td><td><code>themeMode: ThemeMode.system</code></td><td>同時提供 <code>theme</code> 與 <code>darkTheme</code>，由 <code>themeMode</code> 決定用哪一個</td></tr>
+          <tr><td>Material Theme Builder 產生的 <code>ColorScheme</code></td><td><code>ColorScheme.fromSeed</code> / <code>colorSchemeSeed</code></td><td>Flutter 內建「從一個種子色產生整套配色」</td></tr>
+          <tr><td><code>dynamicLightColorScheme(context)</code></td><td><a href="https://pub.dev/packages/dynamic_color">dynamic_color</a> 套件</td><td>Android 12 以上依桌布取色</td></tr>
+          <tr><td><code>Scaffold(topBar = …)</code></td><td><code>Scaffold(appBar: …)</code></td><td><code>TopAppBar</code> 對應 <code>AppBar</code></td></tr>
+          <tr><td><code>bottomBar</code></td><td><code>bottomNavigationBar</code></td><td>放 <code>NavigationBar</code></td></tr>
+          <tr><td><code>floatingActionButton</code></td><td><code>floatingActionButton</code></td><td>完全相同</td></tr>
+          <tr><td><code>snackbarHost</code> ＋ <code>SnackbarHostState</code></td><td><code>ScaffoldMessenger.of(context).showSnackBar()</code></td><td>Flutter 不必自己準備 host，<code>MaterialApp</code> 已經提供 <code>ScaffoldMessenger</code></td></tr>
+          <tr><td><code>content</code> 的 <code>padding</code> 參數</td><td><code>body</code></td><td>Flutter 的 <code>body</code> 已經排在 <code>AppBar</code> 下方，不需要自己套用 padding</td></tr>
+        </table>
+        <aside class="warn">
+          <p>範例的 FAB 外面多包了一層 <code>Builder</code>。原因是 <code>ScaffoldMessenger.of(context)</code> 要從 <code>context</code> 往上找，而 <code>_SkeletonAppState.build</code> 的 <code>context</code> 在 <code>MaterialApp</code> 的「外面」，找不到。這是 <code>BuildContext</code> 代表「在樹中的位置」造成的，第 5 章的<a href="trees.html#context">BuildContext</a>一節有完整說明。實務上，<code>Scaffold</code> 通常會放在另一個 widget 類別裡，就不會遇到這個問題。</p>
+        </aside>
+      </section>
+
+      <section class="lesson" id="theme">
+        <h2>在元件裡使用主題</h2>
+        <span class="part-label">說明</span>
+        <p>Compose 用 <code>MaterialTheme.colorScheme.primary</code> 讀取主題，Flutter 用 <code>Theme.of(context).colorScheme.primary</code>，文字樣式則是 <code>Theme.of(context).textTheme.titleLarge</code>。範例的 <code>SeedPicker</code> 就是這樣讀取的，所以切換主題時它會自動更新。</p>
+        <ul>
+          <li><strong>不要寫死顏色</strong>：跟 Compose 一樣，盡量從 <code>colorScheme</code> 取色，深色模式才會正確。</li>
+          <li><strong>統一調整元件外觀</strong>：<code>ThemeData</code> 有 <code>filledButtonTheme</code>、<code>cardTheme</code>、<code>inputDecorationTheme</code> 等欄位，可以一次改掉所有同類元件的預設樣式，不用每個地方各自設定。</li>
+          <li><strong>自訂的設計 token</strong>：品牌色這類 Material 沒有的值，用 <code>ThemeExtension</code> 掛在 <code>ThemeData.extensions</code> 上，再用 <code>Theme.of(context).extension&lt;MyColors&gt;()</code> 讀取，角色就像自訂的 <code>CompositionLocal</code>。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="structure">
+        <h2>專案結構</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 沒有規定 <code>lib/</code> 的資料夾結構。中大型 App 常見的是<strong>依功能分資料夾</strong>（feature-first），每個功能底下再分層，跟 Android 的多模組架構想法相同：</p>
+        <div class="code-panel"><pre><code>lib/
+├── main.dart              // runApp、ProviderScope、MaterialApp
+├── app/                   // 路由、主題等全 App 共用的設定
+├── features/
+│   ├── todo/
+│   │   ├── data/          // Repository、drift 資料表、API
+│   │   ├── domain/        // 資料類別、商業邏輯
+│   │   └── presentation/  // 畫面、Notifier
+│   └── settings/
+└── shared/                // 共用的 widget 與工具</code></pre></div>
+        <p>本教學的 <code>todo_app</code> 只有一個功能，所以直接用 <code>data/</code>、<code>screens/</code>、<code>widgets/</code> 三個資料夾。Dart 沒有 Gradle 模組那種編譯期的隔離，資料夾之間的依賴方向要靠團隊自己約定；需要強制分隔時，可以把功能拆成獨立的 Dart 套件，用 <code>path</code> 依賴引入，就像第 6 章的 <code>todo_module</code> 引入 <code>todo_app</code> 一樣。</p>
+      </section>
+
+      <section class="lesson" id="packages">
+        <h2>挑選套件與 lint 設定</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 生態系大量依賴 <a href="https://pub.dev">pub.dev</a> 上的第三方套件。挑選時可以看這幾個指標：</p>
+        <table class="compare">
+          <tr><th>指標</th><th>代表什麼</th></tr>
+          <tr><td>Pub points</td><td>pub.dev 自動評分：文件、靜態分析、平台支援、依賴是否過時</td></tr>
+          <tr><td>Verified publisher</td><td>發佈者經過網域驗證，例如 <code>dart.dev</code>、<code>flutter.dev</code>、<code>google.dev</code> 是官方維護</td></tr>
+          <tr><td>Flutter Favorite</td><td>Flutter 團隊挑選的高品質套件</td></tr>
+          <tr><td>平台標籤</td><td>是否支援 Android、iOS、Web 等你需要的平台</td></tr>
+          <tr><td>最後發佈時間、GitHub issue</td><td>是否還有人維護。原生相關的套件尤其要注意，太久沒更新常會跟新版 Android Gradle Plugin 不相容</td></tr>
+        </table>
+        <p><code>flutter pub outdated</code> 會列出可以升級的套件，作用類似 Gradle 的 versions plugin。</p>
+        <p>lint 方面，<code>flutter create</code> 已經在 <code>analysis_options.yaml</code> 引入 <code>flutter_lints</code>。團隊可以再打開更嚴格的規則，例如第 5 章提到的 <code>prefer_const_constructors</code>：</p>
+        <div class="code-panel"><pre><code>include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - prefer_const_constructors
+    - prefer_final_locals</code></pre></div>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

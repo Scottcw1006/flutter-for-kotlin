@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- [snippet:i18n-strings] -->
+    <string name="cart_title">購物車</string>
+    <string name="cart_empty">購物車是空的</string>
+    <string name="greeting">%1$s，你好！</string>
+    <!-- 中文在 Android 只有 other 一種數量類別，0 件要另外用一個字串 -->
+    <plurals name="items_in_cart">
+        <item quantity="other">購物車裡有 %d 件商品</item>
+    </plurals>
+    <!-- [/snippet] -->
+</resources>

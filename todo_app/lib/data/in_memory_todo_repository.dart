@@ -19,9 +19,15 @@ class InMemoryTodoRepository implements TodoRepository {
   }
 
   @override
-  Stream<List<Todo>> watchAll() async* {
-    yield _todos;
-    yield* _changes.stream;
+  Stream<List<Todo>> watchAll() {
+    // 先開始監聽變更，再送出目前的清單；
+    // 反過來寫的話，兩者之間發生的修改會被漏掉
+    final controller = StreamController<List<Todo>>();
+    final subscription = _changes.stream.listen(controller.add);
+    controller
+      ..onCancel = subscription.cancel
+      ..add(_todos);
+    return controller.stream;
   }
 
   @override

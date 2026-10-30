@@ -55,7 +55,11 @@
           <li>因為路由就是網址，Android 的 deep link（App Links）設定好 intent filter 後，go_router 會直接解析，不用再自己對應。</li>
           <li>路徑字串不是型別安全的。想要像 Navigation Compose 那樣用類別定義路由，可以用 <a href="https://pub.dev/packages/go_router_builder">go_router_builder</a> 產生程式碼。</li>
         </ul>
-        <p>編輯頁讀取同一個 <code>todoListProvider</code>，用 <code>select</code> 只挑出自己那一筆：</p>
+        <p>編輯頁讀取同一個 <code>todoListProvider</code>，用 <code>select</code> 只挑出自己那一筆。頁面拆成兩層：</p>
+        <ul>
+          <li><strong>外層 <code>TodoDetailScreen</code></strong>：用 <code>switch</code> 處理載入中、讀取失敗、找不到這筆資料三種情況。透過 deep link 直接開啟這一頁時，資料可能還在載入，這時要顯示轉圈，而不是「找不到」。</li>
+          <li><strong>內層 <code>TodoEditForm</code></strong>：拿到資料之後才建立，標題的 <code>TextEditingController</code> 在這時才用正確的標題初始化（原因見<a href="forms.html#initial-value">文字輸入與表單</a>）。</li>
+        </ul>
         <div class="example" data-id="todo-detail" data-demo="none"></div>
       </section>
 

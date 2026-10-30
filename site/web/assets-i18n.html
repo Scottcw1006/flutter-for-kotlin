@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>圖片、資源與多語系 · Flutter for Kotlin 開發者</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-btn" type="button">☰ 目錄</button>
+    <a class="brand" href="index.html"><span class="logo">K→F</span>Flutter for Kotlin 開發者</a>
+  </header>
+  <div class="layout">
+    <nav id="sidebar"></nav>
+    <main class="content">
+      <p class="chapter-label">第 3 章 · UI 對照</p>
+      <h1>圖片、資源與多語系</h1>
+      <p class="lead">Android 把圖片、字串、字型都放在 <code>res/</code>，由 Gradle 產生 <code>R</code> 類別存取。Flutter 沒有 <code>res/</code>：圖片與字型在 <code>pubspec.yaml</code> 宣告，用路徑字串載入；翻譯字串則放在 <code>.arb</code> 檔，由工具產生一個有型別的類別，角色就像 <code>R.string</code>。</p>
+
+      <section class="lesson" id="images">
+        <h2>圖片：打包的與網路的</h2>
+        <span class="part-label">說明</span>
+        <p>打包在 App 裡的圖片，要先在 <code>pubspec.yaml</code> 宣告所在的資料夾：</p>
+        <div class="code-panel"><pre><code>flutter:
+  assets:
+    - assets/images/</code></pre></div>
+        <p>不同螢幕密度的版本，放在同名檔案的 <code>2.0x/</code>、<code>3.0x/</code> 子資料夾裡，Flutter 會自動挑選，跟 Android 的 <code>drawable-xhdpi</code>、<code>drawable-xxhdpi</code> 是同樣的機制：</p>
+        <table class="compare">
+          <tr><th>Android</th><th>Flutter</th></tr>
+          <tr><td><code>res/drawable-mdpi/app_icon.png</code></td><td><code>assets/images/app_icon.png</code></td></tr>
+          <tr><td><code>res/drawable-xhdpi/app_icon.png</code></td><td><code>assets/images/2.0x/app_icon.png</code></td></tr>
+          <tr><td><code>res/drawable-xxhdpi/app_icon.png</code></td><td><code>assets/images/3.0x/app_icon.png</code></td></tr>
+          <tr><td><code>painterResource(R.drawable.app_icon)</code></td><td><code>Image.asset('assets/images/app_icon.png')</code></td></tr>
+          <tr><td>Coil 的 <code>AsyncImage</code></td><td><code>Image.network(url)</code></td></tr>
+        </table>
+        <div class="example" data-id="images" data-kotlin="images" data-height="300" data-hint="上面是打包在 App 裡的圖片，下面是從 GitHub 下載的網路圖片。按「改用錯誤網址」可以看到 errorBuilder 顯示的錯誤畫面。"></div>
+        <ul>
+          <li><strong>路徑是字串</strong>：沒有 <code>R.drawable</code> 那樣的編譯期檢查，打錯字要到執行時才會發現。需要型別安全時，可以用 <a href="https://pub.dev/packages/flutter_gen">flutter_gen</a> 從 <code>pubspec.yaml</code> 產生資源類別。</li>
+          <li><strong>網路圖片的快取</strong>：<code>Image.network</code> 只有記憶體快取，App 重開就要重新下載。正式的 App 通常改用 <a href="https://pub.dev/packages/cached_network_image">cached_network_image</a>，它會存到磁碟，用法和 Coil 很接近。</li>
+          <li><strong>向量圖</strong>：Flutter 不支援 Android 的 VectorDrawable。SVG 用 <a href="https://pub.dev/packages/flutter_svg">flutter_svg</a> 顯示；Material 圖示則已經內建在 <code>Icons</code> 類別裡，不用像 Compose 那樣另外加 <code>material-icons-extended</code>。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="icon-font">
+        <h2>App 圖示、啟動畫面與字型</h2>
+        <span class="part-label">說明</span>
+        <ul>
+          <li><strong>App 圖示</strong>：仍然是 <code>android/app/src/main/res/mipmap-*</code> 裡的原生資源。手動替換很繁瑣，一般用 <a href="https://pub.dev/packages/flutter_launcher_icons">flutter_launcher_icons</a>，從一張大圖產生 Android（含 adaptive icon）與 iOS 需要的所有尺寸。</li>
+          <li><strong>啟動畫面</strong>：引擎載入期間顯示的是原生的啟動畫面，Android 12 以上由系統的 Splash Screen API 處理。<a href="https://pub.dev/packages/flutter_native_splash">flutter_native_splash</a> 可以一次產生兩個平台的設定。</li>
+          <li><strong>字型</strong>：字型檔放進專案，在 <code>pubspec.yaml</code> 的 <code>fonts</code> 宣告字型家族與字重，再用 <code>TextStyle(fontFamily: …)</code> 或 <code>ThemeData(fontFamily: …)</code> 使用，對應 Android 的 <code>res/font</code>。這個網站本身就用這個方式內附了一份中文字型。</li>
+        </ul>
+      </section>
+
+      <section class="lesson" id="i18n">
+        <h2>多語系：strings.xml 與 .arb</h2>
+        <span class="part-label">說明</span>
+        <p>Flutter 官方的多語系流程，是把翻譯寫在 <code>.arb</code> 檔（JSON 格式），由 <code>flutter gen-l10n</code> 產生 <code>AppLocalizations</code> 類別。設定步驟：</p>
+        <ol>
+          <li>加入套件：<code>flutter pub add flutter_localizations --sdk=flutter</code> 與 <code>flutter pub add intl</code>。</li>
+          <li>在 <code>pubspec.yaml</code> 的 <code>flutter:</code> 底下加上 <code>generate: true</code>，建置時就會自動產生程式碼。</li>
+          <li>在專案根目錄新增 <code>l10n.yaml</code>，指定 <code>.arb</code> 檔的位置與哪一個語言是範本：</li>
+        </ol>
+        <div class="code-panel"><pre><code>arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart</code></pre></div>
+        <p>範本語言（英文）的 <code>.arb</code> 除了字串，還要用 <code>@</code> 開頭的欄位描述參數型別；其他語言只要寫翻譯。下面左邊是 Android 的中文 <code>strings.xml</code>，右邊是對應的 <code>app_zh.arb</code>：</p>
+        <div class="example" data-id="i18n-strings" data-left="i18n-strings.xml" data-left-label="res/values-zh/strings.xml" data-right="app_zh.arb" data-right-label="lib/l10n/app_zh.arb" data-demo="none"></div>
+        <div class="example" data-id="app-en-arb" data-right="app_en.arb" data-right-label="lib/l10n/app_en.arb（範本）" data-demo="none"></div>
+        <p>最後在 <code>MaterialApp</code> 掛上產生出來的 delegate 與支援的語系清單：</p>
+        <div class="example" data-id="i18n-app" data-right="i18n-app.dart" data-right-label="MaterialApp 的設定" data-demo="none"></div>
+        <p>使用時透過 <code>AppLocalizations.of(context)</code> 取得目前語系的字串，每個字串都是一個有型別的 getter 或方法：</p>
+        <div class="example" data-id="i18n" data-left="i18n-usage.kt" data-right="i18n-usage.dart" data-height="230" data-hint="切換中文與英文，並改變商品數量。注意 0 件時兩個語言都顯示專門的句子，英文的 1 件也是單數。"></div>
+        <table class="compare">
+          <tr><th>Android</th><th>Flutter</th></tr>
+          <tr><td><code>res/values-zh/strings.xml</code></td><td><code>lib/l10n/app_zh.arb</code></td></tr>
+          <tr><td><code>stringResource(R.string.cart_title)</code></td><td><code>AppLocalizations.of(context)!.cartTitle</code></td></tr>
+          <tr><td><code>%1$s</code> 位置參數</td><td><code>{name}</code> 具名參數，產生成方法的參數 <code>greeting(String name)</code></td></tr>
+          <tr><td><code>&lt;plurals&gt;</code> ＋ <code>pluralStringResource</code></td><td>ICU 格式 <code>{count, plural, …}</code>，產生成 <code>itemsInCart(int count)</code></td></tr>
+          <tr><td>系統依語系自動選擇</td><td>沒有指定 <code>locale</code> 時同樣跟隨系統語系</td></tr>
+        </table>
+        <aside class="tip">
+          <p><strong>複數規則的一個差別</strong>：Android 的 plurals 只能用語言本身的數量類別，中文只有 <code>other</code> 一種，所以「0 件」要另外寫一個字串、在程式裡判斷。ICU 格式可以直接寫 <code>=0{…}</code>，任何語言都能針對特定數字給專門的句子。</p>
+        </aside>
+        <p>Android 13 的「個別 App 語言」設定，需要在 <code>android/app/src/main/res/xml/</code> 加上 <code>locales_config.xml</code>，並在 manifest 宣告 <code>android:localeConfig</code>，這部分和原生 App 相同。</p>
+      </section>
+
+      <nav class="pager"></nav>
+    </main>
+    <aside id="toc"></aside>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/kotlin.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dart.min.js"></script>
+  <script src="js/site.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

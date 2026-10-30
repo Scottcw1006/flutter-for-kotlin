@@ -1,0 +1,4 @@
+# flutter gen-l10n 的設定：從 lib/l10n/*.arb 產生 AppLocalizations
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart

@@ -89,6 +89,10 @@
         <p>待辦 App 就是這樣做的：<code>todoRepositoryProvider</code> 只宣告介面，真正的實作在 <code>main()</code> 決定。App 用 drift，測試和這個網站用記憶體版本。</p>
         <div class="example" data-id="todo-repository" data-right="todo-repository.dart" data-left="todo-repository.kt" data-left-label="Kotlin" data-demo="none"></div>
         <div class="example" data-id="todo-main" data-right="todo-main.dart" data-left="todo-main.kt" data-left-label="Kotlin（不用 Hilt 的手動注入）" data-demo="none"></div>
+        <aside class="warn">
+          <p><strong>provider 的存活時間和 ViewModel 相反。</strong>ViewModel 會在畫面離開返回堆疊時被清除；Riverpod 手寫的 provider 則預設<strong>一直存在</strong>，離開畫面後狀態還在，下次進來看到的是上次的資料。要讓它跟著畫面消失，宣告時加上 <code>.autoDispose</code>（例如 <code>NotifierProvider.autoDispose</code>）。網路上很多範例用 <code>@riverpod</code> 註解產生 provider，那種寫法<strong>預設</strong>就是 autoDispose，兩種寫法的預設值不同，參考範例時要特別注意。這份教學為了少一個程式碼產生步驟，都用手寫的 provider。</p>
+          <p>另外，autoDispose 的 Notifier 在 <code>await</code> 期間可能已經被釋放。Riverpod 3 在釋放後修改 <code>state</code> 會拋出例外，所以 <code>await</code> 之後要先檢查 <code>ref.mounted</code>，就像在 <code>State</code> 裡檢查 <code>mounted</code>。</p>
+        </aside>
       </section>
 
       <section class="lesson" id="todo-notifier">

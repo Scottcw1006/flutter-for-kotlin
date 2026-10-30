@@ -1,0 +1,6 @@
+{
+  "@@locale": "zh",
+  "cartTitle": "購物車",
+  "itemsInCart": "{count, plural, =0{購物車是空的} other{購物車裡有 {count} 件商品}}",
+  "greeting": "{name}，你好！"
+}

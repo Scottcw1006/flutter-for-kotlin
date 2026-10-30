@@ -6,6 +6,10 @@
 // Dart 端透過 initialData.demoId 決定要顯示哪個 demo，見 lib/main.dart。
 // MaterialApp 會把自己的 title 寫進 document.title，所以先記下原本的標題交給 Dart 端
 const pageTitle = document.title;
+// demo 裡自己寫的 MaterialApp() 預設會把網頁標題設成空字串，被改掉時就還原
+new MutationObserver(() => {
+  if (document.title !== pageTitle) document.title = pageTitle;
+}).observe(document.querySelector("title"), { childList: true, characterData: true, subtree: true });
 
 _flutter.loader.load({
   // GitHub Pages 無法設定 COOP/COEP header，skwasm 會以單執行緒執行，demo 規模下沒有差別

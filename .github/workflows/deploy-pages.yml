@@ -30,7 +30,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :compose-reference:compileDebugKotlin
+      # 編譯 Compose 對照程式碼、跑 ViewModel 單元測試、編譯 Compose UI 測試（UI 測試需要裝置，CI 只編譯）
+      - run: ./gradlew :compose-reference:compileDebugKotlin :compose-reference:testDebugUnitTest :compose-reference:compileDebugAndroidTestKotlin
 
   # 第 6 章的串接範例：Flutter App（channel、Pigeon、platform view）與 add-to-app 宿主
   flutter-samples:
