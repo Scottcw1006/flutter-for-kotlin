@@ -1,16 +1,19 @@
+// [snippet:platform-view-gradle]
 plugins {
     id("com.android.application")
+    // ① Compose 編譯器 plugin（版本在 settings.gradle.kts，要和 Kotlin 版本相同）
     id("org.jetbrains.kotlin.plugin.compose")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // Flutter Gradle plugin 必須放在 Android 與 Kotlin plugin 之後
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.f4k.native_bridge"
-    // Compose BOM 2026.09 需要 compileSdk 37
+    // ② Compose BOM 2026.09 需要 compileSdk 37，不能用範本的 flutter.compileSdkVersion
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
+    // ③ 開啟 Compose
     buildFeatures { compose = true }
 
     compileOptions {
@@ -19,24 +22,16 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.f4k.native_bridge"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // 範例專案沒有上架，release 版沿用 debug 金鑰（正式簽章見第 8 章）
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -53,10 +48,11 @@ flutter {
 }
 
 dependencies {
-    // Pigeon 產生的 Kotlin 代碼使用 coroutines
+    // Pigeon 產生的 suspend fun 需要 coroutines（Flutter 已間接帶入，這裡明確指定版本）
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("androidx.core:core-ktx:1.17.0")
-    // 嵌入原生 View 的範例用 Compose 畫
+    // ④ Compose 函式庫
     implementation(platform("androidx.compose:compose-bom:2026.09.00"))
     implementation("androidx.compose.material3:material3")
 }
+// [/snippet]

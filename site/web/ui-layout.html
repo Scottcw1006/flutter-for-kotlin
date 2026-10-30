@@ -49,7 +49,7 @@
         <p><code>Row</code>、<code>Column</code> 的運作方式是：先用<strong>無界</strong>（最大值是無限大）的主軸 constraints 測量沒有 <code>Expanded</code> 的子元件，再把剩下的空間分給 <code>Expanded</code>。這解釋了 Flutter 最常見的錯誤：</p>
         <aside class="warn">
           <p><strong>在 <code>Column</code> 裡直接放 <code>ListView</code>，會出現「Vertical viewport was given unbounded height」錯誤。</strong><code>ListView</code> 想盡量長高，但 <code>Column</code> 給它的高度上限是無限大，它無法決定自己的尺寸。解法是把 <code>ListView</code> 包在 <code>Expanded</code> 裡，讓它填滿剩下的空間。</p>
-          <p>這跟在 Compose 的 <code>Column(Modifier.verticalScroll())</code> 裡放 <code>LazyColumn</code> 會崩潰是同一個原因，解法也一樣是 <code>Modifier.weight(1f)</code>。</p>
+          <p>Compose 也有同樣的規則：<code>LazyColumn</code> 在 <code>Column</code> 裡用 <code>Modifier.weight(1f)</code> 填滿剩下的空間，對應的就是 <code>Expanded</code>。另一個相關的崩潰是把 <code>LazyColumn</code> 放進 <code>Column(Modifier.verticalScroll())</code>：可捲動的容器給的高度上限是無限大，weight 在這裡也不會生效。兩邊的解法都是不要巢狀捲動，改成單一的列表（Flutter 用 <code>CustomScrollView</code> 加 slivers，Compose 用 <code>LazyColumn</code> 的 <code>item { }</code>），或給內層列表固定高度。</p>
         </aside>
         <p>第一節提到的黃黑斜紋 overflow，也是同樣的機制：<code>Row</code> 先用無界寬度測量長文字，文字量出來比可用寬度還寬，就超出了。把它包進 <code>Expanded</code>，它拿到的就是有上限的寬度，文字會自動換行。</p>
       </section>

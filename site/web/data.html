@@ -58,6 +58,10 @@
         <aside class="tip">
           <p>在網頁上執行時，請求會受瀏覽器的 CORS 限制，所以這裡選了允許跨網域的測試 API。Android 和 iOS 上沒有這個限制。</p>
         </aside>
+        <aside class="warn">
+          <p><strong>release 版要自己加上網路權限。</strong><code>flutter create</code> 只在 <code>android/app/src/debug/</code> 和 <code>profile/</code> 的 <code>AndroidManifest.xml</code> 宣告了 <code>INTERNET</code>（給 hot reload 與除錯工具用），正式版用的 <code>src/main/AndroidManifest.xml</code> 裡沒有。所以會出現「debug 版一切正常，release 版所有請求都失敗」的情況。用到網路的 App，要在 <code>src/main/AndroidManifest.xml</code> 的 <code>&lt;manifest&gt;</code> 底下加上：</p>
+          <p><code>&lt;uses-permission android:name="android.permission.INTERNET" /&gt;</code></p>
+        </aside>
       </section>
 
       <section class="lesson" id="drift">
@@ -83,7 +87,7 @@
       <section class="lesson" id="prefs">
         <h2>簡單設定值：shared_preferences 與 DataStore</h2>
         <span class="part-label">說明</span>
-        <p>存少量的設定值（深色模式、上次選的分頁），DataStore Preferences 對應 shared_preferences。它在 Android 上底層就是 SharedPreferences，在 iOS 上是 <code>NSUserDefaults</code>，在網頁上是 <code>localStorage</code>。</p>
+        <p>存少量的設定值（深色模式、上次選的分頁），DataStore Preferences 對應 shared_preferences。它的底層依平台而定：在 iOS 上是 <code>NSUserDefaults</code>，在網頁上是 <code>localStorage</code>。在 Android 上，這裡用的 <code>SharedPreferencesAsync</code> 預設存在 <strong>DataStore Preferences</strong>，跟 Compose 這邊是同一套；舊的 <code>SharedPreferences.getInstance()</code> API 才是存在 Android 的 <code>SharedPreferences</code>。兩種 API 的資料互不相通，換 API 時舊資料不會自動搬過去。</p>
         <div class="example" data-id="data-prefs" data-kotlin="data-prefs" data-height="160" data-hint="切換深色模式後重新整理網頁，設定會被保留下來。"></div>
         <ul>
           <li>建議使用新的 <code>SharedPreferencesAsync</code>（每次都非同步讀寫），或 <code>SharedPreferencesWithCache</code>。舊的 <code>SharedPreferences.getInstance()</code> 會把資料快取在記憶體裡，多個 isolate 同時讀寫時可能不一致。</li>

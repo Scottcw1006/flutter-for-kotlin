@@ -109,7 +109,7 @@
           <li>重建範圍是整個 <code>build()</code>。狀態放得越外層，每次重建的範圍越大，所以會改變的部分要拆成小 widget，原則跟 Compose 縮小重組範圍一樣。</li>
         </ul>
         <aside class="tip">
-          <p><code>rememberSaveable</code> 對應 Flutter 的 <code>RestorationMixin</code>，但實務上很少用。畫面層級的狀態通常會交給狀態管理套件，角色就像 <code>ViewModel</code> 加 <code>StateFlow</code>，這部分在第 4 章說明。</p>
+          <p><code>rememberSaveable</code> 在 Compose 裡最常用來撐過旋轉。Flutter 不需要這樣做：<code>flutter create</code> 產生的 <code>AndroidManifest.xml</code> 已經在 <code>FlutterActivity</code> 宣告了 <code>configChanges</code>，旋轉、切換深色模式、改字體大小都<strong>不會</strong>重建 Activity，<code>State</code> 會原封不動保留。真正會丟失狀態的是 <strong>process death</strong>（App 在背景被系統回收後再回來），這時才需要 <code>rememberSaveable</code> 的對應功能 <code>RestorationMixin</code>，實務上很少使用。畫面層級的狀態通常會交給狀態管理套件，角色就像 <code>ViewModel</code> 加 <code>StateFlow</code>，這部分在第 4 章說明。</p>
         </aside>
       </section>
 

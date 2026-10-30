@@ -38,7 +38,7 @@
         </div>
         <p>需要三個部分：</p>
         <ol>
-          <li><strong>Kotlin 端的 <code>PlatformView</code></strong>：包住真正的 Android <code>View</code>，並在 <code>dispose()</code> 釋放資源。</li>
+          <li><strong>Kotlin 端的 <code>PlatformView</code></strong>：包住真正的 Android <code>View</code>，並在 <code>dispose()</code> 釋放資源。範例用 Compose 畫這個 View，需要先完成<a href="#compose-view">下一節的 Gradle 設定</a>。</li>
           <li><strong><code>PlatformViewFactory</code></strong>：Dart 端每建立一個實例，就呼叫一次 <code>create()</code>；它的 <code>args</code> 是 Dart 傳來的初始參數。</li>
           <li><strong>Dart 端的 <code>AndroidView</code></strong>：用 <code>viewType</code> 字串指定要建立哪一種 View。iOS 上改用 <code>UiKitView</code>，原生端的 SwiftUI 版本見<a href="ios.html#channels">第 7 章</a>。</li>
         </ol>
@@ -51,9 +51,18 @@
       </section>
 
       <section class="lesson" id="compose-view">
-        <h2>嵌入 ComposeView 的陷阱</h2>
+        <h2>嵌入 ComposeView 要做的設定</h2>
         <span class="part-label">說明</span>
-        <p><code>ComposeView</code> 被加進畫面時，會沿著 View 樹往上找 <code>LifecycleOwner</code> 和 <code>SavedStateRegistryOwner</code>。<code>ComponentActivity</code> 會在 <code>setContentView</code> 時設定好這些，但 <code>FlutterActivity</code> 繼承的是一般的 <code>Activity</code>，沒有設定。範例實際測試的結果，App 一打開就崩潰：</p>
+        <p><code>flutter create</code> 產生的 Android 專案沒有 Compose。原生 View 要用 Compose 寫，得先在 Gradle 加上四項設定，否則上面的 <code>ComposeView</code> 程式碼無法編譯：</p>
+        <ol>
+          <li>Compose 編譯器 plugin <code>org.jetbrains.kotlin.plugin.compose</code>，版本要和專案的 Kotlin 版本相同。</li>
+          <li><code>compileSdk</code> 改成 Compose 函式庫要求的版本。Compose BOM 2026.09 需要 37，範本預設的 <code>flutter.compileSdkVersion</code> 不夠新。</li>
+          <li><code>buildFeatures { compose = true }</code>。</li>
+          <li>Compose 的依賴（BOM 與 material3）。</li>
+        </ol>
+        <div class="example" data-id="platform-view-settings" data-left="platform-view-settings.kts" data-left-label="android/settings.gradle.kts" data-right="platform-view-gradle.kts" data-right-label="android/app/build.gradle.kts" data-right-class="kotlin" data-demo="none"></div>
+        <h3>Activity 要改成 FlutterFragmentActivity</h3>
+        <p>編譯通過之後還有一個陷阱。<code>ComposeView</code> 被加進畫面時，會沿著 View 樹往上找 <code>LifecycleOwner</code> 和 <code>SavedStateRegistryOwner</code>。<code>ComponentActivity</code> 會在 <code>setContentView</code> 時設定好這些，但 <code>FlutterActivity</code> 繼承的是一般的 <code>Activity</code>，沒有設定。範例實際測試的結果，App 一打開就崩潰：</p>
         <div class="code-panel"><pre><code>java.lang.IllegalStateException: ViewTreeLifecycleOwner not found from io.flutter.embedding.android.FlutterView</code></pre></div>
         <p>解法是讓 <code>MainActivity</code> 改為繼承 <code>FlutterFragmentActivity</code>，它是 <code>FragmentActivity</code>（也就是 <code>ComponentActivity</code>）的子類別。嵌入一般的 Android View（例如 <code>TextView</code>、<code>MapView</code>）沒有這個問題。</p>
       </section>

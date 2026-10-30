@@ -45,7 +45,7 @@
           <tr><td>profile</td><td>AOT 編譯成機器碼</td><td>量測效能。和 release 幾乎一樣快，但保留了 DevTools 需要的追蹤資訊。只能在實機上執行</td></tr>
           <tr><td>release</td><td>AOT 編譯成機器碼</td><td>上架。移除所有除錯功能，<code>assert</code> 不會執行</td></tr>
         </table>
-        <p>這跟 Android 原生很不一樣：Kotlin 的 debug 版和 release 版效能差距不大，Flutter 則差很多。要判斷「這個畫面會不會卡」，一定要用 <code>flutter run --profile</code> 在實機上看。</p>
+        <p>Compose 的 debug 版也比 release 版慢（沒有 R8 最佳化與 baseline profile），但 Flutter 的差距更大：debug 版的 Dart 是 JIT 執行，release 版才是 AOT 機器碼（第 1 章也提過）。要判斷「這個畫面會不會卡」，一定要用 <code>flutter run --profile</code> 在實機上看。</p>
       </section>
 
       <section class="lesson" id="flavors">
@@ -168,8 +168,8 @@ Signer #1 certificate DN: CN=F4K Test Upload</code></pre></div>
         <div class="code-panel"><pre><code>flutter build appbundle --flavor prod \
   --dart-define-from-file=config/prod.json \
   --obfuscate --split-debug-info=build/symbols</code></pre></div>
-        <aside class="tip">
-          <p>建置 AAB 時如果出現「Release app bundle failed to strip debug symbols from native libraries」，通常是 Android SDK 少了 <strong>cmdline-tools</strong>。執行 <code>flutter doctor</code> 檢查，在 Android Studio 的 SDK Manager 安裝即可。</p>
+        <aside class="warn">
+          <p>建置 AAB 時如果出現「Release app bundle failed to strip debug symbols from native libraries」，<strong>這是建置失敗，不是警告</strong>：雖然 <code>.aab</code> 檔還是會產生，但指令以 exit code 1 結束，CI 會判定失敗。原因通常是 Android SDK 少了 <strong>cmdline-tools</strong>，安裝方式見<a href="index.html#setup">準備環境</a>。</p>
         </aside>
       </section>
 

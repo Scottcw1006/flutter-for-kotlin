@@ -61,6 +61,9 @@
         <div class="code-panel"><pre><code>brew install --cask flutter
 flutter doctor
 flutter doctor --android-licenses</code></pre></div>
+        <aside class="warn">
+          <p><strong>Android toolchain 那一行要全部打勾。</strong>最常見的缺漏是「cmdline-tools component is missing」：Android Studio 預設不一定會安裝它，在 SDK Manager 的 <strong>SDK Tools</strong> 分頁勾選 <strong>Android SDK Command-line Tools</strong> 即可。少了它，開發時還能正常執行，但 <code>flutter build appbundle</code> 會在最後一步失敗（exit code 1），CI 或發佈腳本會判定建置失敗。也因為少了它，<code>flutter doctor --android-licenses</code> 無法執行。</p>
+        </aside>
         <p>Android Studio 可以繼續用，只要另外安裝 <strong>Flutter</strong> 與 <strong>Dart</strong> 兩個 plugin。也可以改用 VS Code 搭配官方的 Flutter extension。</p>
         <aside class="tip">
           <p>跑起待辦 App：在 <code>todo_app/</code> 目錄執行 <code>flutter run</code>，選擇已開啟的 Android 模擬器。改了代碼後按 <code>r</code> 是 hot reload，效果類似 Compose 的 Live Edit，但會保留 App 的狀態。</p>
