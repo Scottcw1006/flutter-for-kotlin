@@ -26,17 +26,17 @@
 
       <section class="lesson" id="how-to-read">
         <h2>怎麼閱讀這份教學</h2>
-        <p>大部分小節都是同一個格式：先說明觀念，接著把<strong>同一個畫面的 Compose 寫法與 Flutter 寫法並排</strong>，最下面是 Flutter 代碼實際執行的畫面。畫面可以直接點擊、輸入，不是截圖。</p>
+        <p>大部分小節都是同一個格式：先說明觀念，接著把<strong>同一個畫面的 Compose 寫法與 Flutter 寫法並排</strong>，最下面是 Flutter 程式碼實際執行的畫面。畫面可以直接點擊、輸入，不是截圖。</p>
         <div class="legend">
           <span class="part-label kotlin">Compose（Kotlin）：你熟悉的寫法</span>
           <span class="part-label dart">Flutter（Dart）：要學的寫法</span>
         </div>
-        <p>網頁上的代碼都是從 repo 裡<strong>真正會編譯、會執行的原始碼</strong>自動擷取出來的。Compose 代碼來自 <code>samples/android</code>，CI 會實際編譯；Flutter 代碼就是驅動畫面的那一份。所以代碼不會跟畫面對不上，也不會過時。</p>
+        <p>網頁上的程式碼都是從 repo 裡<strong>真正會編譯、會執行的原始碼</strong>自動擷取出來的。Compose 程式碼來自 <code>samples/android</code>，CI 會實際編譯；Flutter 程式碼就是驅動畫面的那一份。所以程式碼不會跟畫面對不上，也不會過時。</p>
       </section>
 
       <section class="lesson" id="roadmap">
         <h2>章節安排</h2>
-        <p>Flutter 代碼一定要用 Dart 寫，所以先講架構與語言，再進入 UI 與邏輯的對照。</p>
+        <p>Flutter 程式碼一定要用 Dart 寫，所以先講架構與語言，再進入 UI 與邏輯的對照。</p>
         <div class="roadmap">
           <a href="architecture.html"><span class="num">第 1 章</span><h3>架構總覽</h3><p>Flutter engine、Dart VM、embedder；Flutter 畫面在 Android 裡到底是什麼。</p></a>
           <a href="dart-syntax.html"><span class="num">第 2 章</span><h3>Dart 給 Kotlin 開發者</h3><p>語法對照、null safety、sealed class，以及 Future/Stream 對應 coroutines/Flow。</p></a>
@@ -66,7 +66,7 @@ flutter doctor --android-licenses</code></pre></div>
         </aside>
         <p>Android Studio 可以繼續用，只要另外安裝 <strong>Flutter</strong> 與 <strong>Dart</strong> 兩個 plugin。也可以改用 VS Code 搭配官方的 Flutter extension。</p>
         <aside class="tip">
-          <p>跑起待辦 App：在 <code>todo_app/</code> 目錄執行 <code>flutter run</code>，選擇已開啟的 Android 模擬器。改了代碼後按 <code>r</code> 是 hot reload，效果類似 Compose 的 Live Edit，但會保留 App 的狀態。</p>
+          <p>跑起待辦 App：在 <code>todo_app/</code> 目錄執行 <code>flutter run</code>，選擇已開啟的 Android 模擬器。改了程式碼後按 <code>r</code> 是 hot reload，效果類似 Compose 的 Live Edit，但會保留 App 的狀態。</p>
         </aside>
       </section>
 

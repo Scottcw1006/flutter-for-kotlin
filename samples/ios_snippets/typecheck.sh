@@ -1,5 +1,5 @@
 #!/bin/sh
-# 用 Flutter SDK 內附的 Flutter.xcframework 對這裡的 Swift 代碼做型別檢查。
+# 用 Flutter SDK 內附的 Flutter.xcframework 對這裡的 Swift 程式碼做型別檢查。
 # 不需要 Xcode 專案，但需要安裝 Xcode（使用 iOS Simulator SDK）。
 # 第一次使用前執行 `flutter precache --ios` 下載 iOS 引擎。
 set -eu

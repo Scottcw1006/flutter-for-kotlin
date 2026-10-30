@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 第 3 章「版面配置與 constraints」左欄的 Kotlin 代碼，與 site/lib/demos/layout_demos.dart 對應
+// 第 3 章「版面配置與 constraints」左欄的 Kotlin 程式碼，與 site/lib/demos/layout_demos.dart 對應
 
 private val Teal = Color(0xFF80CBC4)
 

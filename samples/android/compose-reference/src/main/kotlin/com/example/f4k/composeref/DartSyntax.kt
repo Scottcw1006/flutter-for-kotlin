@@ -1,6 +1,6 @@
 package com.example.f4k.composeref
 
-// 第 2 章「語法對照」左欄的 Kotlin 代碼，與 site/lib/demos/dart_syntax_demos.dart 一一對應
+// 第 2 章「語法對照」左欄的 Kotlin 程式碼，與 site/lib/demos/dart_syntax_demos.dart 一一對應
 
 // [snippet:syntax-variables]
 const val APP_NAME = "Todo" // 編譯期常數
@@ -111,7 +111,7 @@ fun sealedClasses() {
 
 // [snippet:syntax-collections]
 fun collections() {
-    val todos = listOf("買牛奶", "寫代碼", "運動", "讀書")
+    val todos = listOf("買牛奶", "寫程式", "運動", "讀書")
     val showDone = todos.size > 3
     val menu = buildList {
         add("首頁")

@@ -53,7 +53,7 @@
         <ul>
           <li><code>context.push</code> 會把頁面疊上去，<code>context.go</code> 則是「跳到這個網址」：堆疊會依照路由的巢狀結構重建。從清單進詳細頁用 <code>push</code>，從通知直接打開某一頁就用 <code>go</code>。</li>
           <li>因為路由就是網址，Android 的 deep link（App Links）設定好 intent filter 後，go_router 會直接解析，不用再自己對應。</li>
-          <li>路徑字串不是型別安全的。想要像 Navigation Compose 那樣用類別定義路由，可以用 <a href="https://pub.dev/packages/go_router_builder">go_router_builder</a> 產生代碼。</li>
+          <li>路徑字串不是型別安全的。想要像 Navigation Compose 那樣用類別定義路由，可以用 <a href="https://pub.dev/packages/go_router_builder">go_router_builder</a> 產生程式碼。</li>
         </ul>
         <p>編輯頁讀取同一個 <code>todoListProvider</code>，用 <code>select</code> 只挑出自己那一筆：</p>
         <div class="example" data-id="todo-detail" data-demo="none"></div>

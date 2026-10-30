@@ -27,7 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.serialization.Serializable
 
-// 第 4 章「導航」左欄的 Kotlin 代碼，與 site/lib/demos/nav_demos.dart 對應
+// 第 4 章「導航」左欄的 Kotlin 程式碼，與 site/lib/demos/nav_demos.dart 對應
 
 // [snippet:nav-push]
 @Serializable

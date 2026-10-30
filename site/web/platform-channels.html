@@ -20,7 +20,7 @@
     <main class="content">
       <p class="chapter-label">第 6 章 · 與 Android 串接</p>
       <h1>Platform channel 與 Pigeon</h1>
-      <p class="lead">Flutter 的 Dart 代碼跑在自己的引擎裡，不能直接呼叫 Android SDK。要讀電量、用藍牙、呼叫公司既有的 Kotlin 函式庫，就得透過 <strong>platform channel</strong> 把訊息送到 Kotlin 端執行，再把結果傳回來。這一頁從最基本的 <code>MethodChannel</code> 開始，最後改用 <strong>Pigeon</strong> 產生有型別的介面。</p>
+      <p class="lead">Flutter 的 Dart 程式碼跑在自己的引擎裡，不能直接呼叫 Android SDK。要讀電量、用藍牙、呼叫公司既有的 Kotlin 函式庫，就得透過 <strong>platform channel</strong> 把訊息送到 Kotlin 端執行，再把結果傳回來。這一頁從最基本的 <code>MethodChannel</code> 開始，最後改用 <strong>Pigeon</strong> 產生有型別的介面。</p>
 
       <aside class="tip">
         <p>動手寫 channel 之前，先到 <a href="https://pub.dev">pub.dev</a> 找找看有沒有現成的套件。電量（<code>battery_plus</code>）、裝置資訊（<code>device_info_plus</code>）、相機、定位、通知都已經有人包好了，這些套件內部也是用本頁的機制實作的。自己寫 channel，通常是為了公司內部的 SDK，或是套件沒有提供的功能。</p>
@@ -29,7 +29,7 @@
       <section class="lesson" id="sample">
         <h2>範例專案</h2>
         <span class="part-label">說明</span>
-        <p>本章的代碼都來自 repo 裡的 <code>samples/native_bridge/</code>，一個可以直接執行的 Flutter App，CI 會編譯它。四張卡片分別示範 MethodChannel、EventChannel、Pigeon 和下一頁的「嵌入原生 View」：</p>
+        <p>本章的程式碼都來自 repo 裡的 <code>samples/native_bridge/</code>，一個可以直接執行的 Flutter App，CI 會編譯它。四張卡片分別示範 MethodChannel、EventChannel、Pigeon 和下一頁的「嵌入原生 View」：</p>
         <div class="shots">
           <figure>
             <img src="img/native-bridge.png" alt="native_bridge 範例 App 在 Android 模擬器上的畫面：電量 100%、充電中狀態、裝置型號、SHA-256 結果與嵌入的 Compose 按鈕" loading="lazy">
@@ -145,7 +145,7 @@ flutter run</code></pre></div>
       <section class="lesson" id="pigeon">
         <h2>Pigeon：產生有型別的介面</h2>
         <span class="part-label">說明</span>
-        <p>手寫 channel 的問題都出在「兩邊靠字串和 <code>Map</code> 約定」。<a href="https://pub.dev/packages/pigeon">Pigeon</a> 是 Flutter 團隊維護的程式碼產生器：你用 Dart 寫一份介面定義，它產生 Dart 端的呼叫代碼和 Kotlin 端的 interface，channel 名稱、序列化、轉型全部自動處理。概念上跟 Retrofit 從 interface 產生 HTTP 呼叫很像，或是 AIDL 之於 Binder。</p>
+        <p>手寫 channel 的問題都出在「兩邊靠字串和 <code>Map</code> 約定」。<a href="https://pub.dev/packages/pigeon">Pigeon</a> 是 Flutter 團隊維護的程式碼產生器：你用 Dart 寫一份介面定義，它產生 Dart 端的呼叫程式碼和 Kotlin 端的 interface，channel 名稱、序列化、轉型全部自動處理。概念上跟 Retrofit 從 interface 產生 HTTP 呼叫很像，或是 AIDL 之於 Binder。</p>
         <p>先在 <code>pubspec.yaml</code> 的 <code>dev_dependencies</code> 加上 <code>pigeon</code>，再寫介面定義檔：</p>
         <div class="example" data-id="pigeon-def" data-right="pigeon-def.dart" data-right-label="pigeons/messages.dart" data-demo="none"></div>
         <p>執行產生器，會輸出 <code>lib/src/messages.g.dart</code> 和 <code>Messages.g.kt</code> 兩個檔案：</p>
@@ -154,7 +154,7 @@ flutter run</code></pre></div>
         <div class="example" data-id="pigeon-api" data-left="pigeon-api.kt" data-left-label="Android 端（Kotlin）" data-right-label="Flutter 端（Dart）" data-demo="none"></div>
         <ul>
           <li><strong>型別錯誤在編譯時就會發現</strong>：介面改了卻沒更新實作，Kotlin 端直接編譯失敗。</li>
-          <li><strong>標上 <code>@async</code> 的方法會產生成 <code>suspend fun</code></strong>：可以直接用 <code>withContext</code> 切到背景執行緒，產生的代碼會等它完成再回覆。</li>
+          <li><strong>標上 <code>@async</code> 的方法會產生成 <code>suspend fun</code></strong>：可以直接用 <code>withContext</code> 切到背景執行緒，產生的程式碼會等它完成再回覆。</li>
           <li><strong>Dart 的 <code>int</code> 一律對應 <code>Long</code></strong>，不像 StandardMessageCodec 會依大小變成 <code>Int</code> 或 <code>Long</code>。</li>
           <li><strong><code>@FlutterApi</code> 方向相反</strong>：Dart 端實作、Kotlin 端呼叫。下一頁「嵌入原生 View」會用它把 Compose 按鈕的點擊傳回 Flutter。</li>
         </ul>
@@ -171,7 +171,7 @@ flutter run</code></pre></div>
           <tr><td>現成套件（pub.dev）</td><td>常見的系統功能。先找這個，找不到再自己寫</td></tr>
           <tr><td><code>MethodChannel</code> / <code>EventChannel</code></td><td>一兩個簡單的呼叫、快速驗證想法</td></tr>
           <tr><td>Pigeon</td><td>介面超過幾個方法、有自訂資料類別、需要長期維護。實務上的預設選擇</td></tr>
-          <tr><td>包成 Flutter plugin 套件</td><td>多個 App 要共用同一段原生代碼。plugin 就是「Dart API ＋ 各平台實作」打包在一起，內部通常也用 Pigeon</td></tr>
+          <tr><td>包成 Flutter plugin 套件</td><td>多個 App 要共用同一段原生程式碼。plugin 就是「Dart API ＋ 各平台實作」打包在一起，內部通常也用 Pigeon</td></tr>
         </table>
         <p>另外還有一條路是 <a href="https://pub.dev/packages/jnigen">jnigen</a>：直接從 Java/Kotlin 類別產生 Dart 綁定，透過 JNI 同步呼叫，不經過 channel。它還在快速發展中，適合想直接呼叫大量 Android API 的情況，有興趣可以追蹤。</p>
       </section>

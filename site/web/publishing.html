@@ -88,7 +88,7 @@
         </table>
         <h3>Privacy manifest 與出口合規</h3>
         <ul>
-          <li><strong>Privacy manifest</strong>：App 與它使用的 SDK，如果呼叫了 Apple 列為「需要說明原因」的 API（例如讀取檔案時間戳記、<code>UserDefaults</code>），必須在 <code>PrivacyInfo.xcprivacy</code> 宣告原因。Flutter 引擎與常用 plugin 已經附上自己的 privacy manifest，你的 App 只需要宣告自己原生代碼用到的部分。</li>
+          <li><strong>Privacy manifest</strong>：App 與它使用的 SDK，如果呼叫了 Apple 列為「需要說明原因」的 API（例如讀取檔案時間戳記、<code>UserDefaults</code>），必須在 <code>PrivacyInfo.xcprivacy</code> 宣告原因。Flutter 引擎與常用 plugin 已經附上自己的 privacy manifest，你的 App 只需要宣告自己原生程式碼用到的部分。</li>
           <li><strong>出口合規（加密）</strong>：每次上傳都會被問是否使用加密。只用 HTTPS 等標準加密的 App，在 <code>Info.plist</code> 加上 <code>ITSAppUsesNonExemptEncryption</code> 為 <code>NO</code>，就不會每次都被問。</li>
         </ul>
       </section>

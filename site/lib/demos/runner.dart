@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-/// 迷你 console：執行一段會呼叫 print() 的 Dart 代碼，把輸出逐行顯示在畫面上。
-/// 用 Zone 攔截 print，所以 demo 代碼可以照平常的寫法直接呼叫 print()。
+/// 迷你 console：執行一段會呼叫 print() 的 Dart 程式碼，把輸出逐行顯示在畫面上。
+/// 用 Zone 攔截 print，所以 demo 程式碼可以照平常的寫法直接呼叫 print()。
 class RunnerDemo extends StatefulWidget {
   const RunnerDemo({super.key, required this.run});
 

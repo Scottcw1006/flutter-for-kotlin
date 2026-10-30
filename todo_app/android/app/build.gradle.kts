@@ -78,8 +78,8 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
-            // Flutter 預設會對 release 版的 Kotlin/Java 代碼啟用 R8 縮減與混淆；
-            // Dart 代碼的混淆另外由 flutter build 的 --obfuscate 處理
+            // Flutter 預設會對 release 版的 Kotlin/Java 程式碼啟用 R8 縮減與混淆；
+            // Dart 程式碼的混淆另外由 flutter build 的 --obfuscate 處理
         }
     }
     // [/snippet]

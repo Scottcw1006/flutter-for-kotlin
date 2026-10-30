@@ -20,7 +20,7 @@
     <main class="content">
       <p class="chapter-label">第 1 章 · 架構總覽</p>
       <h1>Flutter 在 Android 上怎麼運作</h1>
-      <p class="lead">開始寫代碼之前，先搞清楚一件事：用 Flutter 寫的 App，在 Android 上到底是什麼？簡單的答案是，它<strong>仍然是一個標準的 Android App</strong>，只是畫面不交給 Android 畫，而是由 App 自帶的 Flutter engine 自己畫。理解這一點之後，後面很多「為什麼 Flutter 要這樣做」的問題都會有答案。</p>
+      <p class="lead">開始寫程式碼之前，先搞清楚一件事：用 Flutter 寫的 App，在 Android 上到底是什麼？簡單的答案是，它<strong>仍然是一個標準的 Android App</strong>，只是畫面不交給 Android 畫，而是由 App 自帶的 Flutter engine 自己畫。理解這一點之後，後面很多「為什麼 Flutter 要這樣做」的問題都會有答案。</p>
 
       <section class="lesson" id="android-app">
         <h2>它還是一個 Android App</h2>
@@ -29,11 +29,11 @@
         <div class="example" data-id="arch-flutter-activity" data-right="arch-flutter-activity.kt" data-right-label="Flutter 專案（Kotlin）" data-left="arch-compose-activity.kt" data-left-label="Compose App（Kotlin）" data-demo="none"></div>
         <ul>
           <li><code>setContent { }</code> 是把 Compose UI 放進這個 Activity，Activity 本身仍然由你掌控。</li>
-          <li><code>FlutterActivity</code> 會建立一個 <code>FlutterEngine</code>，執行 Dart 的 <code>main()</code>，然後把整個畫面交給 Flutter。你的 Dart 代碼從 <code>lib/main.dart</code> 開始，Activity 這一層通常不用再動。</li>
+          <li><code>FlutterActivity</code> 會建立一個 <code>FlutterEngine</code>，執行 Dart 的 <code>main()</code>，然後把整個畫面交給 Flutter。你的 Dart 程式碼從 <code>lib/main.dart</code> 開始，Activity 這一層通常不用再動。</li>
           <li>整個 App 通常只有<strong>這一個 Activity</strong>。換頁是 Flutter 內部的事（第 4 章的導航），概念上就是 single-activity 架構加上 Navigation Compose。</li>
         </ul>
         <aside class="tip">
-          <p>這個 <code>android/</code> 專案就是第 6 章串接原生功能的入口：要呼叫 Android SDK、使用既有的 Kotlin 函式庫，代碼都寫在這裡。</p>
+          <p>這個 <code>android/</code> 專案就是第 6 章串接原生功能的入口：要呼叫 Android SDK、使用既有的 Kotlin 函式庫，程式碼都寫在這裡。</p>
         </aside>
       </section>
 
@@ -79,8 +79,8 @@
         </figure>
         <ul>
           <li><strong>Framework（Dart）</strong>：你每天打交道的部分，包含所有 widget、Material 與 Cupertino 元件、版面配置、動畫、手勢。它是一般的 Dart 原始碼，在 IDE 裡按住 Cmd 點進去就能讀。</li>
-          <li><strong>Engine（C++）</strong>：負責繪圖（Impeller）、執行 Dart 代碼、排版文字。它會被編譯成 <code>libflutter.so</code>，打包在你的 APK 裡。</li>
-          <li><strong>Embedder（Kotlin / Java）</strong>：把 engine 接到 Android 上，負責建立 Surface、轉送觸控與鍵盤事件、處理生命週期、在 Dart 和原生代碼之間傳訊息（第 6 章的 platform channel）。</li>
+          <li><strong>Engine（C++）</strong>：負責繪圖（Impeller）、執行 Dart 程式碼、排版文字。它會被編譯成 <code>libflutter.so</code>，打包在你的 APK 裡。</li>
+          <li><strong>Embedder（Kotlin / Java）</strong>：把 engine 接到 Android 上，負責建立 Surface、轉送觸控與鍵盤事件、處理生命週期、在 Dart 和原生程式碼之間傳訊息（第 6 章的 platform channel）。</li>
         </ul>
         <aside class="warn">
           <p>Flutter 的 Material 元件是用 Dart <strong>重新實作</strong>的，不是 Android 的 Material Components。所以同一個 <code>FilledButton</code> 在 Android 和 iOS 上看起來完全一樣，Android 系統升級也不會改變它的外觀。</p>
@@ -105,10 +105,10 @@
       <section class="lesson" id="dart-runtime">
         <h2>Dart 程式怎麼執行</h2>
         <span class="part-label">說明</span>
-        <p>Dart 代碼在開發與發佈時的執行方式不同，這也是 Flutter 開發體驗的關鍵：</p>
+        <p>Dart 程式碼在開發與發佈時的執行方式不同，這也是 Flutter 開發體驗的關鍵：</p>
         <table class="compare">
           <tr><th>模式</th><th>Dart 怎麼跑</th><th>用途</th></tr>
-          <tr><td><strong>debug</strong></td><td>JIT，在 Dart VM 裡執行</td><td>開發。支援 <strong>hot reload</strong>：把改過的代碼注入正在執行的 VM，畫面立刻更新，<strong>狀態也會保留</strong>。效能不代表正式版。</td></tr>
+          <tr><td><strong>debug</strong></td><td>JIT，在 Dart VM 裡執行</td><td>開發。支援 <strong>hot reload</strong>：把改過的程式碼注入正在執行的 VM，畫面立刻更新，<strong>狀態也會保留</strong>。效能不代表正式版。</td></tr>
           <tr><td><strong>profile</strong></td><td>AOT 編譯，保留效能分析工具</td><td>量測效能、找掉幀。要在實機上跑。</td></tr>
           <tr><td><strong>release</strong></td><td>AOT 編譯成原生機器碼（<code>libapp.so</code>）</td><td>上架。沒有 VM 直譯也沒有 JIT，啟動快、執行快。</td></tr>
         </table>
@@ -116,7 +116,7 @@
           <p>debug 模式下捲動卡卡是正常的，不要拿 debug 版判斷效能。這跟 Compose 在 debug build 比較慢是同樣的道理，但 Flutter 的差距更明顯。</p>
         </aside>
         <h3>執行緒</h3>
-        <p>Dart 的代碼跑在 <strong>isolate</strong> 裡，每個 isolate 是單執行緒加上一個 event loop，彼此不共享記憶體。你的 UI 代碼跑在主 isolate；Flutter 3.29 起，它在 Android 上直接跑在 App 的主執行緒，繪圖則由另一條 raster 執行緒負責。</p>
+        <p>Dart 的程式碼跑在 <strong>isolate</strong> 裡，每個 isolate 是單執行緒加上一個 event loop，彼此不共享記憶體。你的 UI 程式碼跑在主 isolate；Flutter 3.29 起，它在 Android 上直接跑在 App 的主執行緒，繪圖則由另一條 raster 執行緒負責。</p>
         <p>這代表 Dart 沒有 <code>Dispatchers.IO</code> 這種「切換執行緒」的概念：網路和檔案 I/O 本來就是非同步、不會卡住 UI；真正吃 CPU 的運算才需要丟到另一個 isolate。第 2 章的非同步會詳細對照 coroutines。</p>
       </section>
 
@@ -126,9 +126,9 @@
         <p>把 release 版 APK 用 Android Studio 的 APK Analyzer 打開，會看到這些東西：</p>
         <table class="compare">
           <tr><th>檔案</th><th>內容</th></tr>
-          <tr><td><code>classes.dex</code></td><td>embedder、plugin 的 Kotlin/Java 代碼，以及你的 <code>MainActivity</code></td></tr>
+          <tr><td><code>classes.dex</code></td><td>embedder、plugin 的 Kotlin/Java 程式碼，以及你的 <code>MainActivity</code></td></tr>
           <tr><td><code>lib/arm64-v8a/libflutter.so</code></td><td>Flutter engine</td></tr>
-          <tr><td><code>lib/arm64-v8a/libapp.so</code></td><td><strong>你的 Dart 代碼</strong>，AOT 編譯後的機器碼</td></tr>
+          <tr><td><code>lib/arm64-v8a/libapp.so</code></td><td><strong>你的 Dart 程式碼</strong>，AOT 編譯後的機器碼</td></tr>
           <tr><td><code>assets/flutter_assets/</code></td><td>在 <code>pubspec.yaml</code> 宣告的圖片、字型等資源</td></tr>
         </table>
         <p>因為要帶著 engine，最小的 Flutter App 會比 Compose 的 hello world 大幾 MB。上架時用 App Bundle（AAB）讓 Google Play 依裝置 ABI 分發，就不會把每種 CPU 架構的 <code>.so</code> 都裝到使用者手機上，第 8 章說明。</p>

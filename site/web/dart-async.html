@@ -52,11 +52,11 @@
       <section class="lesson" id="errors">
         <h2>錯誤處理與取消</h2>
         <span class="part-label">說明</span>
-        <p>錯誤處理和同步代碼一樣用 <code>try</code>/<code>catch</code>。只捕捉特定型別時寫 <code>on 型別 catch (e)</code>，對應 Kotlin 的 <code>catch (e: 型別)</code>。</p>
+        <p>錯誤處理和同步程式碼一樣用 <code>try</code>/<code>catch</code>。只捕捉特定型別時寫 <code>on 型別 catch (e)</code>，對應 Kotlin 的 <code>catch (e: 型別)</code>。</p>
         <p>取消就完全不同了。<strong>Future 沒有取消機制</strong>：<code>timeout()</code> 只是「不再等待」，原本的工作會繼續跑完。看輸出的最後一行：逾時之後 <code>mayFail</code> 還是印出了「跑完了」。Kotlin 的 <code>withTimeout</code> 則會真的取消它。</p>
         <div class="example" data-id="async-errors" data-kotlin="async-errors" data-height="200"></div>
         <aside class="warn">
-          <p>這在 UI 代碼裡很重要。Compose 的 <code>LaunchedEffect</code> 和 <code>viewModelScope</code> 會在離開畫面時自動取消；Flutter 不會，<code>await</code> 回來時這個 widget 可能已經被移除了。所以在 <code>State</code> 裡 await 之後、呼叫 <code>setState</code> 或使用 <code>context</code> 之前，要先檢查 <code>if (!mounted) return;</code>。</p>
+          <p>這在 UI 程式碼裡很重要。Compose 的 <code>LaunchedEffect</code> 和 <code>viewModelScope</code> 會在離開畫面時自動取消；Flutter 不會，<code>await</code> 回來時這個 widget 可能已經被移除了。所以在 <code>State</code> 裡 await 之後、呼叫 <code>setState</code> 或使用 <code>context</code> 之前，要先檢查 <code>if (!mounted) return;</code>。</p>
         </aside>
       </section>
 
@@ -88,7 +88,7 @@
       <section class="lesson" id="isolate">
         <h2>執行緒與 isolate</h2>
         <span class="part-label">說明</span>
-        <p>Dart 的代碼跑在單執行緒的 event loop 上。網路、檔案這類 I/O 由底層非同步處理，<code>await</code> 時 event loop 會去處理別的事，所以<strong>不需要 <code>Dispatchers.IO</code></strong>。</p>
+        <p>Dart 的程式碼跑在單執行緒的 event loop 上。網路、檔案這類 I/O 由底層非同步處理，<code>await</code> 時 event loop 會去處理別的事，所以<strong>不需要 <code>Dispatchers.IO</code></strong>。</p>
         <p>但如果是吃 CPU 的運算（解析大型 JSON、影像處理），它會卡住 event loop，畫面就會掉幀。這時要把工作丟到另一個 <strong>isolate</strong>，相當於 <code>withContext(Dispatchers.Default)</code>：</p>
         <ul>
           <li><code>Isolate.run(() =&gt; ...)</code> 是 Dart 的標準做法；Flutter 的 <code>compute(函式, 參數)</code> 是它的包裝，在網頁上也能用。</li>

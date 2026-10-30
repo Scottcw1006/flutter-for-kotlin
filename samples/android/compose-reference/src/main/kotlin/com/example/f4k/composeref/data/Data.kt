@@ -25,7 +25,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.http.GET
 
-// 第 4 章「網路與資料儲存」左欄的 Kotlin 代碼，與 site/lib/demos/data_demos.dart 對應
+// 第 4 章「網路與資料儲存」左欄的 Kotlin 程式碼，與 site/lib/demos/data_demos.dart 對應
 
 // [snippet:data-json]
 @Serializable

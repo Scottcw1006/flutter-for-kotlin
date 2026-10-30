@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 網頁上的 Compose 對照代碼來自這裡，必須能編譯
+  # 網頁上的 Compose 對照程式碼來自這裡，必須能編譯
   android-samples:
     runs-on: ubuntu-latest
     defaults:
@@ -67,7 +67,7 @@ jobs:
           cd ../android_host
           ./gradlew :app:assembleDebug
 
-  # 第 7 章的 Swift 代碼：沒有 Xcode 專案，直接對 Flutter.xcframework 做型別檢查
+  # 第 7 章的 Swift 程式碼：沒有 Xcode 專案，直接對 Flutter.xcframework 做型別檢查
   ios-snippets:
     runs-on: macos-latest
     steps:

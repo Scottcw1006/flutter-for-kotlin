@@ -255,7 +255,7 @@ table.compare th { background: var(--bg-soft); }
 .part-label.swift::before { background: var(--swift); }
 .part-label.os::before { background: var(--os); }
 
-/* ---------- Example: Compose 代碼 | Flutter 代碼，下方實際呈現 ---------- */
+/* ---------- Example: Compose 程式碼 | Flutter 程式碼，下方實際呈現 ---------- */
 .example {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

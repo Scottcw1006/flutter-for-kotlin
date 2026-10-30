@@ -1,6 +1,6 @@
 // 從 demo 原始碼中擷取 `// [snippet:id]` ... `// [/snippet]` 區塊
 //（YAML 用 `# [snippet:id]`，XML 用 `<!-- [snippet:id] -->`），輸出成 web/snippets/<id>.<副檔名>，
-// 讓網頁上顯示的代碼與實際執行、實際編譯的代碼永遠一致。
+// 讓網頁上顯示的程式碼與實際執行、實際編譯的程式碼永遠一致。
 //
 // 在 site/ 目錄下執行：dart run tool/extract_snippets.dart
 import 'dart:io';

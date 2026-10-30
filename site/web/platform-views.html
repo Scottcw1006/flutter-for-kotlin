@@ -87,7 +87,7 @@
           <tr><th>模式</th><th>Dart 端寫法</th><th>特性</th></tr>
           <tr><td><strong>Texture Layer Hybrid Composition</strong>（TLHC）</td><td><code>AndroidView</code>（本範例）</td><td>原生 View 畫到一個 texture，再由 Flutter 合成。效能好，Flutter 畫面不受影響。不支援 <code>SurfaceView</code>，遇到時會退回其他模式</td></tr>
           <tr><td><strong>Hybrid Composition</strong></td><td><code>PlatformViewLink</code> ＋ <code>PlatformViewsService.initExpensiveAndroidView</code></td><td>原生 View 直接放進 Android 的 View 階層，相容性最好（地圖、影片這類用 <code>SurfaceView</code> 的元件）。代價是 Flutter 的繪製也會受影響，整體幀率可能下降</td></tr>
-          <tr><td><strong>Virtual Display</strong></td><td>舊的退回選項</td><td>畫到虛擬螢幕再當成 texture。鍵盤輸入、無障礙等功能有限制，新代碼不建議使用</td></tr>
+          <tr><td><strong>Virtual Display</strong></td><td>舊的退回選項</td><td>畫到虛擬螢幕再當成 texture。鍵盤輸入、無障礙等功能有限制，新程式碼不建議使用</td></tr>
         </table>
         <p>大多數情況直接用 <code>AndroidView</code> 就好。原生元件畫面不正常（例如黑屏、不會更新）時，再改用 Hybrid Composition。</p>
       </section>

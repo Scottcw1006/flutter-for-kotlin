@@ -20,7 +20,7 @@
     <main class="content">
       <p class="chapter-label">第 8 章 · 打包與發佈</p>
       <h1>Flavors 與建置設定</h1>
-      <p class="lead">Android 開發者熟悉的 build type、product flavor、<code>BuildConfig</code>、release 簽章，在 Flutter 專案裡都還在，因為 <code>android/</code> 就是一個普通的 Gradle 專案。不同的是，Dart 代碼看不到 Gradle 的設定，需要另外的機制把環境資訊傳進去。這一頁替待辦 App 加上 dev 與 prod 兩個環境，並設定好上架用的 release 簽章。</p>
+      <p class="lead">Android 開發者熟悉的 build type、product flavor、<code>BuildConfig</code>、release 簽章，在 Flutter 專案裡都還在，因為 <code>android/</code> 就是一個普通的 Gradle 專案。不同的是，Dart 程式碼看不到 Gradle 的設定，需要另外的機制把環境資訊傳進去。這一頁替待辦 App 加上 dev 與 prod 兩個環境，並設定好上架用的 release 簽章。</p>
 
       <section class="lesson" id="concepts">
         <h2>概念對照</h2>
@@ -159,11 +159,11 @@ Signer #1 certificate DN: CN=F4K Test Upload</code></pre></div>
           <tr><td><code>flutter build apk --split-per-abi</code></td><td>每種架構各一個 APK</td><td>arm64：19.8 MB<br>armeabi-v7a：17.1 MB<br>x86_64：21.3 MB</td></tr>
           <tr><td><code>flutter build appbundle</code></td><td>AAB，上傳到 Google Play 用</td><td>53 MB（使用者只會下載自己裝置需要的部分）</td></tr>
         </table>
-        <p>大小主要來自 Flutter 引擎與 AOT 編譯後的 Dart 代碼，每種 CPU 架構各一份；待辦 App 另外還帶了 drift 用的 SQLite 原生函式庫。想知道是哪些套件佔空間，加上 <code>--analyze-size</code>，再用 DevTools 開啟產生的 JSON 檔。</p>
+        <p>大小主要來自 Flutter 引擎與 AOT 編譯後的 Dart 程式碼，每種 CPU 架構各一份；待辦 App 另外還帶了 drift 用的 SQLite 原生函式庫。想知道是哪些套件佔空間，加上 <code>--analyze-size</code>，再用 DevTools 開啟產生的 JSON 檔。</p>
         <p>混淆分成兩部分：</p>
         <ul>
-          <li><strong>Kotlin/Java 代碼</strong>：Flutter 預設對 release 版啟用 R8，跟原生專案一樣。用到反射的原生函式庫，可能需要自己加 ProGuard 規則。</li>
-          <li><strong>Dart 代碼</strong>：加上 <code>--obfuscate --split-debug-info=build/symbols</code>。混淆後的 stack trace 要用 <code>flutter symbolize</code> 搭配這些符號檔還原，所以<strong>每一個上架的版本都要保存它的符號檔</strong>，就像保存 R8 的 <code>mapping.txt</code> 一樣。</li>
+          <li><strong>Kotlin/Java 程式碼</strong>：Flutter 預設對 release 版啟用 R8，跟原生專案一樣。用到反射的原生函式庫，可能需要自己加 ProGuard 規則。</li>
+          <li><strong>Dart 程式碼</strong>：加上 <code>--obfuscate --split-debug-info=build/symbols</code>。混淆後的 stack trace 要用 <code>flutter symbolize</code> 搭配這些符號檔還原，所以<strong>每一個上架的版本都要保存它的符號檔</strong>，就像保存 R8 的 <code>mapping.txt</code> 一樣。</li>
         </ul>
         <div class="code-panel"><pre><code>flutter build appbundle --flavor prod \
   --dart-define-from-file=config/prod.json \

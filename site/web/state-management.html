@@ -64,7 +64,7 @@
         <p>Android 慣例是自己定義 <code>UiState</code> sealed interface 來表示載入中、成功、失敗。Riverpod 內建了 <code>AsyncValue</code>，<code>FutureProvider</code>、<code>StreamProvider</code>、<code>AsyncNotifier</code> 的狀態都是它，直接用 <code>switch</code> 比對就好。</p>
         <div class="example" data-id="state-async" data-kotlin="state-async" data-height="260" data-hint="切換「模擬連線失敗」會自動重新載入；按「重新整理」會再跑一次。"></div>
         <ul>
-          <li><code>weatherProvider</code> 裡 <code>ref.watch(simulateErrorProvider)</code>，所以開關一變就會自動重新載入，不用另外寫「開關改變時呼叫 refresh」的代碼。</li>
+          <li><code>weatherProvider</code> 裡 <code>ref.watch(simulateErrorProvider)</code>，所以開關一變就會自動重新載入，不用另外寫「開關改變時呼叫 refresh」的程式碼。</li>
           <li><code>ref.invalidate(provider)</code> 會讓它重新執行，對應 ViewModel 的 <code>refresh()</code>。</li>
           <li>重新載入時，舊的請求如果比較晚回來，它的結果會被自動丟掉。Kotlin 版要自己保存 <code>Job</code> 並 <code>cancel()</code>，才能避免舊結果蓋掉新結果。</li>
           <li>重新載入期間，<code>AsyncValue</code> 會保留上一次的資料，並把 <code>isLoading</code> 設為 <code>true</code>。想顯示轉圈就先檢查 <code>isLoading</code>；想讓舊資料留在畫面上，就直接比對 <code>AsyncData</code>。</li>
@@ -100,7 +100,7 @@
           <li>新增、勾選、刪除只呼叫 Repository，不用手動更新清單，因為 Stream 會把新資料送回來。</li>
           <li><code>remainingCountProvider</code> 是衍生狀態，標題列的「剩幾項」就讀它。</li>
         </ul>
-        <div class="example" data-id="todo-notifier" data-kotlin="todo-notifier" data-height="440" data-hint="畫面的代碼在 todo_app/lib/screens/todo_list_screen.dart：它改成 ConsumerStatefulWidget，用 switch 比對 AsyncValue 來顯示清單、錯誤或載入中。"></div>
+        <div class="example" data-id="todo-notifier" data-kotlin="todo-notifier" data-height="440" data-hint="畫面的程式碼在 todo_app/lib/screens/todo_list_screen.dart：它改成 ConsumerStatefulWidget，用 switch 比對 AsyncValue 來顯示清單、錯誤或載入中。"></div>
       </section>
 
       <nav class="pager"></nav>

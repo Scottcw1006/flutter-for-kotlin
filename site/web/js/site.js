@@ -102,12 +102,12 @@ function codePanel(label, labelClass, file) {
     </div>`;
 }
 
-// 把 <div class="example"> 展開成「左：Android/Compose 代碼 | 右：Flutter 代碼 + 實際呈現」。
+// 把 <div class="example"> 展開成「左：Android/Compose 程式碼 | 右：Flutter 程式碼 + 實際呈現」。
 //   data-id           右欄 snippet（預設 <id>.dart）與 demo 的 id
 //   data-kotlin       左欄對照用的 Compose snippet id（<id>.kt），可省略
 //   data-left         左欄改用指定檔名的 snippet（例如 build-gradle.kts），搭配 data-left-label
 //   data-right        右欄改用指定檔名的 snippet（例如 main-activity.kt），搭配 data-right-label
-//   data-demo         設為 "none" 時只顯示代碼，不放實際畫面（例如原生端代碼）
+//   data-demo         設為 "none" 時只顯示程式碼，不放實際畫面（例如原生端程式碼）
 // 必須在 flutter_bootstrap.js 之前同步執行，Flutter 才找得到 [data-demo] 節點。
 function renderExamples() {
   document.querySelectorAll(".example[data-id]").forEach((el) => {
@@ -145,7 +145,7 @@ async function loadSnippets() {
       code.textContent = await res.text();
       if (window.hljs) hljs.highlightElement(code);
     } catch (e) {
-      code.textContent = `// 無法載入代碼片段：${code.dataset.snippet}`;
+      code.textContent = `// 無法載入程式碼片段：${code.dataset.snippet}`;
     }
   }));
 }

@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 第 5 章 Compose 對照代碼，與 site/lib/demos/tree_demos.dart、key_demos.dart 對應
+// 第 5 章 Compose 對照程式碼，與 site/lib/demos/tree_demos.dart、key_demos.dart 對應
 
 // [snippet:tree-rebuild]
 @Composable

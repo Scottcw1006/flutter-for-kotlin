@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
-// 第 2 章「非同步」左欄的 Kotlin 代碼，與 site/lib/demos/dart_async_demos.dart 一一對應
+// 第 2 章「非同步」左欄的 Kotlin 程式碼，與 site/lib/demos/dart_async_demos.dart 一一對應
 
 // [snippet:async-future]
 suspend fun fetchUser(id: Int): String {

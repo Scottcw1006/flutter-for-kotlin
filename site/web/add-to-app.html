@@ -51,24 +51,24 @@ cd ../android_host
       <section class="lesson" id="module">
         <h2>Flutter 模組與 Flutter App 的差別</h2>
         <span class="part-label">說明</span>
-        <p>用 <code>flutter create -t module</code> 建立的是<strong>模組</strong>。它和一般 Flutter App 的 Dart 代碼寫法完全一樣，差別在 Android 專案的部分：</p>
+        <p>用 <code>flutter create -t module</code> 建立的是<strong>模組</strong>。它和一般 Flutter App 的 Dart 程式碼寫法完全一樣，差別在 Android 專案的部分：</p>
         <table class="compare">
           <tr><th></th><th>Flutter App</th><th>Flutter 模組</th></tr>
           <tr><td>Android 專案</td><td><code>android/</code>，進版本控制，可以自由修改</td><td><code>.android/</code>，由 <code>flutter pub get</code> 自動產生，<strong>不進版本控制</strong>，不要手動修改</td></tr>
           <tr><td>產出</td><td>可以安裝的 APK / AAB</td><td>一個 Android library，給別的 App 使用</td></tr>
-          <tr><td>原生代碼寫在哪</td><td><code>android/app/src/</code></td><td>宿主 App 裡</td></tr>
+          <tr><td>原生程式碼寫在哪</td><td><code>android/app/src/</code></td><td>宿主 App 裡</td></tr>
         </table>
         <figure class="diagram">
           <svg viewBox="0 0 760 170" role="img" aria-label="宿主的 :app 模組依賴 :flutter 專案，:flutter 專案再依賴 todo_app 套件">
             <rect class="dg-box dg-kotlin" x="20" y="30" width="210" height="100" rx="10"/>
             <text class="dg-text" x="125" y="68">:app</text>
-            <text class="dg-sub" x="125" y="92">android_host 的原生代碼</text>
+            <text class="dg-sub" x="125" y="92">android_host 的原生程式碼</text>
             <text class="dg-sub" x="125" y="112">Compose 畫面、Application</text>
 
             <rect class="dg-box dg-dart" x="275" y="30" width="210" height="100" rx="10"/>
             <text class="dg-text" x="380" y="68">:flutter</text>
             <text class="dg-sub" x="380" y="92">todo_module/.android 產生</text>
-            <text class="dg-sub" x="380" y="112">Flutter 引擎＋Dart 代碼</text>
+            <text class="dg-sub" x="380" y="112">Flutter 引擎＋Dart 程式碼</text>
 
             <rect class="dg-box dg-dart" x="530" y="30" width="210" height="100" rx="10"/>
             <text class="dg-text" x="635" y="68">todo_app 套件</text>
@@ -95,7 +95,7 @@ cd ../android_host
         <p>有兩種方式可以讓宿主 App 使用 Flutter 模組：</p>
         <table class="compare">
           <tr><th>方式</th><th>做法</th><th>適合的情況</th></tr>
-          <tr><td><strong>原始碼引入</strong>（本範例）</td><td>在 <code>settings.gradle.kts</code> 引入模組的 <code>include_flutter.groovy</code>，宿主建置時一起編譯 Dart 代碼</td><td>Android 開發者也會改 Flutter 代碼；可以用 <code>flutter attach</code> 做 hot reload</td></tr>
+          <tr><td><strong>原始碼引入</strong>（本範例）</td><td>在 <code>settings.gradle.kts</code> 引入模組的 <code>include_flutter.groovy</code>，宿主建置時一起編譯 Dart 程式碼</td><td>Android 開發者也會改 Flutter 程式碼；可以用 <code>flutter attach</code> 做 hot reload</td></tr>
           <tr><td><strong>AAR</strong></td><td>在模組執行 <code>flutter build aar</code>，產生 debug/profile/release 三組 AAR，放到 Maven repository 給宿主依賴</td><td>宿主團隊的電腦不想安裝 Flutter SDK；Flutter 模組由另一個團隊發版</td></tr>
         </table>
         <p>原始碼引入的設定只有兩處。<code>settings.gradle.kts</code> 套用模組產生的 script，它會建立名為 <code>:flutter</code> 的 Gradle 專案：</p>
@@ -110,7 +110,7 @@ cd ../android_host
       <section class="lesson" id="engine">
         <h2>FlutterEngine：先暖機，再顯示</h2>
         <span class="part-label">說明</span>
-        <p>每個 Flutter 畫面背後都有一個 <code>FlutterEngine</code>，負責執行 Dart 代碼和繪製畫面。建立引擎、載入 Dart 代碼需要一點時間；如果等使用者按下按鈕才開始，畫面會先空白一下。</p>
+        <p>每個 Flutter 畫面背後都有一個 <code>FlutterEngine</code>，負責執行 Dart 程式碼和繪製畫面。建立引擎、載入 Dart 程式碼需要一點時間；如果等使用者按下按鈕才開始，畫面會先空白一下。</p>
         <p>常見做法是在 <code>Application.onCreate</code> 就建立引擎、執行 Dart 的 <code>main()</code>，放進 <code>FlutterEngineCache</code>。之後開啟 Flutter 畫面時，直接拿快取裡已經在跑的引擎：</p>
         <div class="example" data-id="a2a-engine" data-left="a2a-engine.kt" data-left-label="Android 宿主（Kotlin）" data-right="a2a-module-main.dart" data-right-label="Flutter 模組（Dart）" data-demo="none"></div>
         <p>兩邊用的是上一頁的 <code>MethodChannel</code>，名稱都是 <code>f4k/host</code>。因為引擎一啟動就執行 <code>main()</code>，<code>HostBridge</code> 會立刻回報剩餘數量，所以原生畫面在使用者打開 Flutter 之前就已經顯示「2」。</p>
@@ -140,7 +140,7 @@ cd ../android_host
           <li><strong>Hot reload</strong>：從 Android Studio 執行宿主 App 後，在模組目錄執行 <code>flutter attach</code>，就能對 Flutter 畫面 hot reload。</li>
           <li><strong>Plugin</strong>：模組用到的 Flutter plugin（例如 drift 的 sqlite）會自動加進宿主，<code>FlutterEngine</code> 建立時也會自動註冊，不需要額外設定。</li>
           <li><strong>建置類型</strong>：Flutter 只有 debug、profile、release 三種模式。宿主有自訂的 build type（例如 <code>staging</code>）時，要用 <code>matchingFallbacks</code> 對應到其中一種。</li>
-          <li><strong>App 大小</strong>：加入 Flutter 會增加引擎與 Dart 代碼的大小，release 版大約多數 MB，第 8 章會說明怎麼量測。</li>
+          <li><strong>App 大小</strong>：加入 Flutter 會增加引擎與 Dart 程式碼的大小，release 版大約多數 MB，第 8 章會說明怎麼量測。</li>
           <li><strong>iOS 也能做同樣的事</strong>：同一個 Flutter 模組可以嵌入 iOS App，做法見<a href="ios.html#add-to-app">第 7 章</a>。</li>
         </ul>
       </section>

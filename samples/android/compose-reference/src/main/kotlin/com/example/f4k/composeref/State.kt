@@ -18,7 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-// 第 4 章「ViewModel 與狀態管理」左欄的 Kotlin 代碼，與 site/lib/demos/state_demos.dart 對應
+// 第 4 章「ViewModel 與狀態管理」左欄的 Kotlin 程式碼，與 site/lib/demos/state_demos.dart 對應
 
 // [snippet:state-viewmodel]
 class CounterViewModel : ViewModel() {

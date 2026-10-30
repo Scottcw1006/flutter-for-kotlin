@@ -26,7 +26,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-kotlinx-serialization:3.0.0")
-    // 實際專案還要加 ksp("androidx.room:room-compiler")；這個模組只需要讓對照代碼通過編譯
+    // 實際專案還要加 ksp("androidx.room:room-compiler")；這個模組只需要讓對照程式碼通過編譯
     implementation("androidx.room:room-runtime:2.8.5")
 }
 // [/snippet]

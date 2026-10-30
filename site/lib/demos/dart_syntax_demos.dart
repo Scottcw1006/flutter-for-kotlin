@@ -142,7 +142,7 @@ void sealedClasses() {
 
 // [snippet:syntax-collections]
 void collections() {
-  final todos = ['買牛奶', '寫代碼', '運動', '讀書'];
+  final todos = ['買牛奶', '寫程式', '運動', '讀書'];
   final showDone = todos.length > 3;
   final menu = ['首頁', if (showDone) '已完成', '設定']; // collection if
 

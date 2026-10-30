@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
-// 第 3 章「列表」左欄的 Kotlin 代碼，與 site/lib/demos/list_demos.dart 對應
+// 第 3 章「列表」左欄的 Kotlin 程式碼，與 site/lib/demos/list_demos.dart 對應
 
 // [snippet:lists-builder]
 @Composable

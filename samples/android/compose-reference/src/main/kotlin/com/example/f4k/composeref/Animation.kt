@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-// 第 3 章「動畫」左欄的 Kotlin 代碼，與 site/lib/demos/animation_demos.dart 對應
+// 第 3 章「動畫」左欄的 Kotlin 程式碼，與 site/lib/demos/animation_demos.dart 對應
 
 // [snippet:anim-implicit]
 @Composable

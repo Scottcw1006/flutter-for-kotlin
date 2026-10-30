@@ -86,7 +86,7 @@
         <span class="part-label">說明</span>
         <ul>
           <li>欄位要另外宣告，建構子用 <code>this.x</code> 直接把參數存進欄位。</li>
-          <li><strong>Dart 沒有 data class。</strong><code>==</code>、<code>hashCode</code>、<code>toString</code>、<code>copyWith</code> 都要自己寫。實務上會用 <a href="https://pub.dev/packages/freezed">freezed</a> 這類套件自動產生，原理就像 KSP 產生代碼。第 4 章的待辦 App 會用到。</li>
+          <li><strong>Dart 沒有 data class。</strong><code>==</code>、<code>hashCode</code>、<code>toString</code>、<code>copyWith</code> 都要自己寫。實務上會用 <a href="https://pub.dev/packages/freezed">freezed</a> 這類套件自動產生，原理就像 KSP 產生程式碼。第 4 章的待辦 App 會用到。</li>
           <li>Dart 3 的 <strong>record</strong> 可以取代 <code>Pair</code>、<code>Triple</code>：<code>(int, int)</code> 是匿名的，<code>({int min, int max})</code> 是具名欄位的版本。record 自帶結構相等，也可以直接解構。</li>
         </ul>
         <div class="example" data-id="syntax-classes" data-kotlin="syntax-classes" data-height="175"></div>
